@@ -12,6 +12,7 @@ from maser.data.data import *
 import datetime
 import numpy
 import hashlib
+import collections.abc
 
 __author__ = "Baptiste Cecconi"
 __date__ = "29-AUG-2017"
@@ -237,6 +238,21 @@ class CassiniKronosData(MaserDataFromInterval):
         return CassiniKronosData.from_interval(start_time, end_time, 'n3b',
                                                verbose=verbose, debug=debug)
 
+    @classmethod
+    def load_n3c_data(cls, start_time, end_time, n2_data=None, verbose=False, debug=False):
+        return CassiniKronosData.from_interval(start_time, end_time, 'n3c',
+                                           verbose=verbose, debug=debug)
+
+    @classmethod
+    def load_n3d_data(cls, start_time, end_time, n2_data=None, verbose=False, debug=False):
+        return CassiniKronosData.from_interval(start_time, end_time, 'n3d',
+                                               verbose=verbose, debug=debug)
+
+    @classmethod
+    def load_n3e_data(cls, start_time, end_time, n2_data=None, verbose=False, debug=False):
+        return CassiniKronosData.from_interval(start_time, end_time, 'n3e',
+                                               verbose=verbose, debug=debug)
+
 #    def load_extra_level(self, input_level, input_sublevel=''):
 #        new_level = CassiniKronosLevel(input_level, input_sublevel)
 #        self.dataset_name.append(new_level)
@@ -388,16 +404,14 @@ class CassiniKronosData(MaserDataFromInterval):
         return modes
 
 
-class CassiniKronosSweeps:
+class CassiniKronosSweeps(collections.abc.Iterator):
 
     def __init__(self, parent):
+        collections.abc.Iterator.__init__(self)
         self.parent = parent
         self.times, self.indices = numpy.unique(self.parent['datetime'], return_inverse=True)
         self.cur_index = 0
         self.max_index = len(self.times)
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         if self.cur_index == self.max_index-1:
@@ -417,17 +431,15 @@ class CassiniKronosSweeps:
         return hashlib.md5(repr(d['fi']).encode('utf-8')).hexdigest()
 
 
-class CassiniKronosRecords:
+class CassiniKronosRecords(collections.abc.Iterator):
 
     def __init__(self, parent):
+        collections.abc.Iterator.__init__(self)
         self.parent = parent
         self.times = self.parent['datetime']
         self.freqs = self.parent['f']
         self.cur_index = 0
         self.max_index = len(self.parent.data[self.parent.level.name])
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         if self.cur_index == self.max_index-1:
