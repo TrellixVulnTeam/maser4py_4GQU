@@ -1,12 +1,14 @@
 import unittest
 import datetime
 import os
-from maser.data.data import *
-from maser.data.nancay.nda.nda import *
-from maser.data.nancay.nda.newroutine import *
+import maser.data.tests
+import maser.data.nancay.nda.nda
+import maser.data.nancay.nda.newroutine
 
-test_file = 'data/nda/J20170101_022612_Rou.dat'
-rou = NDANewRoutineData(test_file)
+maser.data.tests.test_data_files("nda")
+
+test_file = os.path.join('data', 'nda', 'newroutine', 'J20170101_022612_Rou.dat')
+rou = maser.data.nancay.nda.newroutine.NDANewRoutineData(test_file)
 sweep_first = rou.get_first_ecube()
 sweep_last = rou.get_last_ecube()
 sweep_100 = rou.get_single_ecube(100)
@@ -47,9 +49,9 @@ class NDANewRoutineSweep(unittest.TestCase):
     """Test Case for NDARoutineSweep class"""
 
     def test_class(self):
-        self.assertIsInstance(sweep_first, NDADataECube)
-        self.assertIsInstance(sweep_last, NDADataECube)
-        self.assertIsInstance(sweep_100, NDADataECube)
+        self.assertIsInstance(sweep_first, maser.data.nancay.nda.nda.NDADataECube)
+        self.assertIsInstance(sweep_last, maser.data.nancay.nda.nda.NDADataECube)
+        self.assertIsInstance(sweep_100, maser.data.nancay.nda.nda.NDADataECube)
 
     def test_index(self):
         self.assertEqual(sweep_first.index, 0)
