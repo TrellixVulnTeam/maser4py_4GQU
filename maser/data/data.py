@@ -212,7 +212,29 @@ class MaserDataFromFileFITS(MaserDataFromFile):
         self.format = 'FITS'
 
     def get_mime_type(self):
-        return 'application/x-fits'
+        return 'application/fits'
+
+
+class MaserDataFromFileText(MaserDataFromFile):
+
+    def __init__(self, file, verbose=True, debug=False):
+
+        MaserDataFromFile.__init__(file, verbose, debug)
+        self.format = 'TXT'
+
+    def get_mime_type(self):
+        return 'text/plain'
+
+
+class MaserDataFromFileCSV(MaserDataFromFile):
+
+    def __init__(self, file, verbose=True, debug=False):
+
+        MaserDataFromFile.__init__(file, verbose, debug)
+        self.format = 'CSV'
+
+    def get_mime_type(self):
+        return 'text/csv'
 
 
 class MaserDataRecord(object):
