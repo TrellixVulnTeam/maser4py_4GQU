@@ -8,7 +8,8 @@ Python module to work with PDS/PPI/Voyager/PRA Data
 
 import datetime
 import os
-from maser.data.data import *
+from maser.data.data import MaserDataFromInterval
+from maser.data.data import MaserError
 
 __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC, Observatoire de Paris"
@@ -37,7 +38,7 @@ class PDSPPIVoyagerPRAJupiterData(MaserDataFromInterval):
         else:
             raise MaserError("Wrong input for 'SC_ID' argument. Must be 1 or 2.")
 
-        self.data_path = root_data_path + 'VG{}_JUPITER'.format(sc_id)
+        self.data_path = os.path.join(root_data_path, 'VG{}_JUPITER'.format(sc_id))
         self.data = list()
         self.files = list()
 

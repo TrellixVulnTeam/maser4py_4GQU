@@ -8,7 +8,7 @@ Python module to read a INTERBALL Auroral S/C data from CDPP deep archive (http:
 
 import struct
 import os
-from maser.data.cdpp.cdpp import *
+from maser.data.cdpp.cdpp import CDPPDataFromFile
 
 __author__ = "Baptiste Cecconi"
 __date__ = "10-JUL-2017"

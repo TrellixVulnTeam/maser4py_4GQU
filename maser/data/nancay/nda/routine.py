@@ -9,8 +9,9 @@ Python module to work with SRN/NDA/Routine data
 import struct
 import datetime
 import os
-from maser.data.data import *
-from maser.data.nancay.nda.nda import *
+from maser.data.data import MaserDataSweep
+from maser.data.nancay.nda.nda import NDAError
+from maser.data.nancay.nda.nda import NDADataFromFile
 
 __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC-USN, Observatoire de Paris"

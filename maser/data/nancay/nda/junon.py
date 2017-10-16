@@ -7,10 +7,9 @@ Python module to read Nancay/NDA/JunoN data from SRN/NDA.
 """
 
 import struct
-import datetime
-import os
-from maser.data.data import *
-from maser.data.nancay.nda.nda import *
+from maser.data.nancay.nda.nda import NDAError
+from maser.data.nancay.nda.nda import NDADataFromFile
+from maser.data.nancay.nda.nda import NDADataECube
 
 __author__ = "Baptiste Cecconi"
 __date__ = "12-OCT-2017"

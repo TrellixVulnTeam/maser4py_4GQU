@@ -8,7 +8,9 @@ Python module to define classes for the Nancay Decameter Array (NDA) datasets at
 
 import struct
 import datetime
-from maser.data.data import *
+from maser.data.data import MaserError
+from maser.data.data import MaserDataFromFile
+from maser.data.data import MaserDataSweep
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."

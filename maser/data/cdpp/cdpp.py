@@ -8,7 +8,7 @@ For more info on CCSDS time formats, refer to "TIME CODE FORMATS" CCSDS 301.0-B-
 """
 
 import datetime
-from maser.data.data import *
+from maser.data.data import MaserDataFromFile
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."

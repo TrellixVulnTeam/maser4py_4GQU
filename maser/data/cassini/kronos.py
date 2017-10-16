@@ -8,7 +8,9 @@ Python module to read a Viking/V4n/E5 data file from CDPP deep archive (http://c
 
 import os
 import struct
-from maser.data.data import *
+from maser.data.data import MaserError
+from maser.data.data import MaserDataFromFile
+from maser.data.data import MaserDataFromInterval
 import datetime
 import numpy
 import hashlib
