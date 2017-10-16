@@ -71,7 +71,7 @@ class NDAJunonData(NDADataFromFile):
             return desc
 
         if desc['stream_10G'] != 1 and desc['stream_10G'] != 2:
-            raise NDAJunonError("Wrong stream_10G mode (read value = {}".format(desc['stream_10G']))
+            raise NDAJunonError("Wrong stream_10G mode (read value = {})".format(desc['stream_10G']))
 
         if desc['stream_10G'] == 1:
 
