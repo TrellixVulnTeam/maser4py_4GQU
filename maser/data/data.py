@@ -204,6 +204,17 @@ class MaserDataFromFileCDF(MaserDataFromFile):
         return 'application/x-cdf'
 
 
+class MaserDataFromFileFITS(MaserDataFromFile):
+
+    def __init__(self, file, verbose=True, debug=False):
+
+        MaserDataFromFile.__init__(file, verbose, debug)
+        self.format = 'FITS'
+
+    def get_mime_type(self):
+        return 'application/x-fits'
+
+
 class MaserDataRecord(object):
 
     def __init__(self, parent, raw_data):
