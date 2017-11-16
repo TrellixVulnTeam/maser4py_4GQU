@@ -6,3 +6,4 @@ sphinx_rtd_theme
 pytz
 astropy
 python-dateutil
+scipy
