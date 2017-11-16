@@ -9,6 +9,7 @@ import os
 import math
 import datetime
 import dateutil.parser
+from astropy.io import fits
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."
@@ -18,7 +19,7 @@ __project__ = "MASER"
 
 __all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord", "MaserDataSweep"]
 
-pds_bin = '/Users/baptiste/Projets/VOParis/igpp-git/VG1_JUPITER-cdf-1.0.11/bin/'
+pds_bin = '/Users/baptiste/Projets/VOParis/igpp-git/pds-cdf-1.0.11/bin/'
 cdf_bin = '/Applications/cdf/cdf/bin/'
 
 
@@ -29,7 +30,7 @@ class MaserError(Exception):
     pass
 
 
-class MaserData:
+class MaserData(object):
     """
     Basic MaserData class with minimal methods
     """
@@ -45,6 +46,29 @@ class MaserData:
         self.start_time = None
         self.end_time = None
         self.dataset_name = None
+
+    def get_epncore_meta(self):
+        md = dict()
+        md['time_min'] = self.start_time
+        md['time_max'] = self.end_time
+        return md
+
+    def get_istp_meta(self):
+        md = dict()
+        md['project'] = ['MASER']
+        return md
+
+    def get_pds4_meta(self):
+        pass
+
+    def build_edr_data(self, start_time=None, end_time=None):
+        if start_time is None:
+            start_time = self.start_time
+        if end_time is None:
+            end_time = self.start_time
+
+        var = {'header': {}, 'time': [], 'data': {}}
+        return var, start_time, end_time
 
 
 class MaserDataFromInterval(MaserData):
@@ -98,10 +122,9 @@ class MaserDataFromFile(MaserData):
         :param verbose: (bool) set to False to remove verbose output (default to True)
         :param debug: (bool) set to True to have debug output (default to False)
         """
-
         MaserData.__init__(self, verbose, debug)
         self.file = os.path.abspath(file)
-        self.format = ''
+        self.format = 'bin'
 
     def get_file_name(self):
         """
@@ -164,12 +187,19 @@ class MaserDataFromFile(MaserData):
     def __ne__(self, other):
         return self.get_file_name() != other.get_file_name()
 
+    def get_epncore(self):
+        md = MaserData.get_epncore_meta(self)
+        md['filename'] = self.get_file_name()
+        md['access_format'] = self.get_mime_type()
+        md['access_estsize'] = self.get_file_size()/1024
+        return md
+
 
 class MaserDataFromFileCDF(MaserDataFromFile):
 
     def __init__(self, file, verbose=True, debug=False):
 
-        MaserDataFromFile.__init__(file, verbose, debug)
+        MaserDataFromFile.__init__(self, file, verbose, debug)
         self.format = 'CDF'
 
     def validate_pds(self):
