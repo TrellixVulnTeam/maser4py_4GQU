@@ -182,7 +182,8 @@ def read_dmt_n1(file_path, verbose=False, debug=False):
                     reshape((int(data_header_i["NB"]),int(data_header_i["NBF"])))}
 
             except EOFError:
-                print("End of file reached")
+                if verbose:
+                    print("End of file reached")
                 break
 
             else:
