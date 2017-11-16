@@ -1,13 +1,14 @@
-import unittest
 import datetime
 import os
-import maser.data.tests
+import unittest
+
 import maser.data.data
-import maser.data.radiojove.radiojove_spx
+import maser.data.padc.radiojove.radiojove_spx
+import maser.data.tests
 
 maser.data.tests.load_test_data("radiojove")
 
-o = maser.data.radiojove.radiojove_spx.RadioJoveDataFromFile(
+o = maser.data.padc.radiojove.radiojove_spx.RadioJoveDataSPXFromFile(
     os.path.join('data', 'radiojove', 'sps', '161210000000.sps'))
 
 

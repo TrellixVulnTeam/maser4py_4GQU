@@ -3,7 +3,7 @@ import datetime
 from maser.data.nancay.nda.nda import *
 from maser.data.nancay.nda.junon import *
 
-test_file = 'data/nda/J20170101_022612_Rou.dat'
+test_file = 'data/nda/newroutine/J20170101_022612_Rou.dat'
 rou = NDAJunonData(test_file)
 sweep_first = rou.get_first_ecube()
 sweep_last = rou.get_last_ecube()
