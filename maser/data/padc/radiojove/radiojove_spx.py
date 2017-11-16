@@ -10,8 +10,8 @@ import os
 import struct
 import pprint as pp
 import datetime
-from astropy import time as astime
-from maser.data.data import *
+from astropy import time as aTime
+from maser.data.data import MaserDataFromFile, MaserData
 from maser.utils.cdf import cdf
 import json
 
@@ -19,7 +19,7 @@ __author__ = "Baptiste Cecconi"
 __date__ = "26-JUL-2017"
 __version__ = "0.10"
 
-__all__ = ["RadioJoveDataFromFile"]
+__all__ = ["RadioJoveDataSPXFromFile", "RadioJoveDataCDF"]
 
 packet_size = 10000
 
@@ -31,7 +31,7 @@ class RadioJoveError(Exception):
 ################################################################################
 # Defining the generic class for RadioJove Data (inherited from MaserData)
 ################################################################################
-class RadioJoveDataFromFile(MaserDataFromFile):
+class RadioJoveDataSPXFromFile(MaserDataFromFile):
     """
     Class for RadioJove data
     """
@@ -64,9 +64,9 @@ class RadioJoveDataFromFile(MaserDataFromFile):
         # date conversion: header dates are given in decimal days since 30/12/1899 00:00 (early morning!) == day 0.0
         # date values must be corrected by adding 2415018.5 = julian date 30/12/1899 00:00
         header['start_jdtime'] = hdr_values[1] + 2415018.5
-        header['start_time'] = astime.Time(header['start_jdtime'], format='jd').datetime
+        header['start_time'] = aTime.Time(header['start_jdtime'], format='jd').datetime
         header['stop_jdtime'] = hdr_values[2] + 2415018.5
-        header['stop_time'] = astime.Time(header['stop_jdtime'], format='jd').datetime
+        header['stop_time'] = aTime.Time(header['stop_jdtime'], format='jd').datetime
         header['latitude'] = hdr_values[3]
         header['longitude'] = hdr_values[4]
         header['chartmax'] = hdr_values[5]
@@ -202,7 +202,7 @@ class RadioJoveDataFromFile(MaserDataFromFile):
                         else:
                             notes[key_item] = note_value
 
-# final special case: if not present this keyword (no value) says that we deal with single channel spectrograph data
+                            # final special case: if not present this keyword (no value) says that we deal with single channel spectrograph data
         if 'DUALSPECFILE' not in notes.keys():
             notes['DUALSPECFILE'] = False
         else:
@@ -339,7 +339,8 @@ class RadioJoveDataFromFile(MaserDataFromFile):
 
         # Reading data:
 
-        self.file_info['data_length'] = self.file_info['size']-self.file_info['prim_hdr_length']-header['note_length']
+        self.file_info['data_length'] = self.file_info['size'] - self.file_info['prim_hdr_length'] - header[
+            'note_length']
 
         # nfeed = number of observation feeds
         # nfreq = number of frequency step (1 for SPD)
@@ -471,7 +472,7 @@ class RadioJoveDataFromFile(MaserDataFromFile):
             time_step = 0.
 
         # transforming times from JD to datetime
-        time = astime.Time(time, format='jd').datetime
+        time = aTime.Time(time, format='jd').datetime
 
         # time sampling step in seconds
         header['time_step'] = time_step * 86400.
@@ -503,15 +504,13 @@ class RadioJoveDataFromFile(MaserDataFromFile):
     def close_radiojove_spx(self):
         """
         Closes the current SPS or SPD input file
-        :param self:
-        :return:
         """
         if self.verbose:
             print("### [close_radiojove_spx]")
 
         self.file_info['lun'].close()
 
-    def extract_radiojove_spx_data(self):
+    def extract_radiojove_spx_data(self) -> dict:
         """
         :return:
         """
@@ -546,7 +545,7 @@ class RadioJoveDataFromFile(MaserDataFromFile):
                 else:
                     print("Loading records #{} to #{}".format(j1, j2))
 
-            data_raw = np.array(self.read_radiojove_spx_sweep(j2-j1))[:, rec_0:rec_0 + nfreq * nfeed].\
+            data_raw = np.array(self.read_radiojove_spx_sweep(j2 - j1))[:, rec_0:rec_0 + nfreq * nfeed]. \
                 reshape(j2 - j1, nfreq, nfeed)
 
             for i in range(nfeed):
@@ -578,6 +577,95 @@ class RadioJoveDataFromFile(MaserDataFromFile):
 
         return raw
 
+    def get_time_axis(self):
+        return self.time
+
+    def build_edr_data(self, start_time=None, end_time=None):
+        """
+        Builds EDR (Experiment Data Record) elements.
+        :param start_time: start time (datetime); using self.start_time if set to None
+        :param end_time: end time (datetime); using self.end_time if set to None
+        :return var: a dictionary containing: a header dictionary, a time list and a data dictionary
+        """
+        var, edr_start_time, edr_end_time = MaserData.build_edr_data(start_time, end_time)
+
+        # loading time axis
+        time_axis = self.get_time_axis()
+
+        # adding header
+        var['header'].update(self.header)
+
+        # selecting channels on their names (e.g., remove extra channels)
+        for chan_item in self.header['feeds']:
+            var['data'][chan_item['FIELDNAM']] = list()
+
+        # looping on time axis
+        for ii, cur_time in enumerate(time_axis):
+
+            # if cur_time is in input interval
+            if edr_start_time <= cur_time < edr_end_time:
+
+                var['time'].append(cur_time)
+                for chan_item in var['data'].keys():
+                    var['data'][chan_item].append(self.data[chan_item][ii])
+
+        return var
+
+
+class RadioJoveDataCDF(MaserData):
+
+    def __init__(self, parent, verbose=True, debug=False):
+        MaserData.__init__(self, verbose, debug)
+        self.parent = parent
+
+    def init_radiojove_cdf(self, debug=False):
+        """
+        Initialization of the output CDF file
+        :param file_info: a dictionary containing the input file information
+        :param header: a dictionary containing the input file header
+        :param start_time: datetime object (starting of observation)
+        :param config: a dictionary containing the local configuration
+        :param debug: Set to True to have verbose output
+        :return cdfout: the CDF handle to be used for further CDF operations
+        """
+        if debug:
+            print("### [init_radiojove_cdf]")
+
+        # Setting up the CDF output name
+        if self.file_info['daily']:
+            self.file_info['cdfout_file'] = "radiojove_{}_{}_{}_{}_{:%Y%m%d}_V{}.cdf".\
+                format(self.header['obsty_id'], self.header['instr_id'], self.header['level'],
+                       self.header['product_type'], self.start_time.date(), self.config['vers']['cdf']).lower()
+        else:
+            file_info['cdfout_file'] = "radiojove_{}_{}_{}_{}_{:%Y%m%d%H%M}_V{}.cdf".format(header['obsty_id'],
+                                                                                            header['instr_id'],
+                                                                                            header['level'],
+                                                                                            header['product_type'],
+                                                                                            start_time,
+                                                                                            config['vers'][
+                                                                                                'cdf']).lower()
+
+        # removing existing CDF file with same name if necessary (PyCDF cannot overwrite a CDF file)
+        if os.path.exists(config['path']['out'] + file_info['cdfout_file']):
+            os.remove(config['path']['out'] + file_info['cdfout_file'])
+
+        print("CDF file output: {}".format(config['path']['out'] + file_info['cdfout_file']))
+
+        #    Opening CDF object
+        cdf.lib.set_backward(False)  # this is setting the CDF version to be used
+        cdfout = cdf.CDF(config['path']['out'] + file_info['cdfout_file'], '')
+        cdfout.col_major(True)  # Column Major
+        cdfout.compress(cdf.const.NO_COMPRESSION)  # No file level compression
+
+        return cdfout
+
+
+#class RadioJoveSPSStruct(struct.Struct):
+#    def __init__(self, parent):
+#        self.parent = parent
+#        struct.Struct.__init__(self, self.parent.file_info['format'])
+
+
 
 ################################################################################
 # Loading local config file
@@ -595,7 +683,7 @@ def load_local_config(config_file, debug=False):
         {
         "out": "where/to/output/cdf/files/",
         "bin": "/path/to/cdf/library/bin/",
-        "pds": "/path/to/cdf-pds/library/bin/"
+        "VG1_JUPITER": "/path/to/cdf-VG1_JUPITER/library/bin/"
         },
     "vers":
         {
@@ -645,49 +733,7 @@ def load_local_config(config_file, debug=False):
 ################################################################################
 # Init CDF output file
 ################################################################################
-def init_radiojove_cdf(file_info, header, start_time, config, debug=False):
-    """
-    Initialization of the output CDF file
-    :param file_info: a dictionary containing the input file information
-    :param header: a dictionary containing the input file header
-    :param start_time: datetime object (starting of observation)
-    :param config: a dictionary containing the local configuration
-    :param debug: Set to True to have verbose output
-    :return cdfout: the CDF handle to be used for further CDF operations
-    """
-    if debug:
-        print("### [init_radiojove_cdf]")
 
-    # Setting up the CDF output name
-    if file_info['daily']:
-        file_info['cdfout_file'] = "radiojove_{}_{}_{}_{}_{:%Y%m%d}_V{}.cdf".format(header['obsty_id'],
-                                                                                    header['instr_id'],
-                                                                                    header['level'],
-                                                                                    header['product_type'],
-                                                                                    start_time.date(),
-                                                                                    config['vers']['cdf']).lower()
-    else:
-        file_info['cdfout_file'] = "radiojove_{}_{}_{}_{}_{:%Y%m%d%H%M}_V{}.cdf".format(header['obsty_id'],
-                                                                                        header['instr_id'],
-                                                                                        header['level'],
-                                                                                        header['product_type'],
-                                                                                        start_time,
-                                                                                        config['vers']['cdf']).lower()
-
-    # removing existing CDF file with same name if necessary (PyCDF cannot overwrite a CDF file)
-    if os.path.exists(config['path']['out']+file_info['cdfout_file']):
-        os.remove(config['path']['out']+file_info['cdfout_file'])
-    
-    print("CDF file output: {}".format(config['path']['out']+file_info['cdfout_file']))
-        
-#    Opening CDF object 
-    cdf.lib.set_backward(False)  # this is setting the CDF version to be used
-    cdfout = cdf.CDF(config['path']['out']+file_info['cdfout_file'], '')
-    cdfout.col_major(True)                         # Column Major
-    cdfout.compress(cdf.const.NO_COMPRESSION)    # No file level compression
-
-    return cdfout
-    
 
 ################################################################################
 # Close CDF output file
@@ -703,10 +749,10 @@ def close_radiojove_cdf(cdfout, debug=False):
         print("### [close_radiojove_cdf]")
 
     cdfout.close()
-    
+
 
 ################################################################################
-# Global Attributes for CDF 
+# Global Attributes for CDF
 ################################################################################
 def write_gattr_radiojove_cdf(cdfout, header, time, freq, config, debug=False):
     """
@@ -722,9 +768,9 @@ def write_gattr_radiojove_cdf(cdfout, header, time, freq, config, debug=False):
     if debug:
         print("### [write_gattr_radiojove_cdf]")
 
-    # Creating Time and Frequency Axes 
+    # Creating Time and Frequency Axes
     ndata = len(time)
-    jul_date = astime.Time(time, format="datetime", scale="utc").jd.tolist()
+    jul_date = aTime.Time(time, format="datetime", scale="utc").jd.tolist()
 
     # SETTING ISTP GLOBAL ATTRIBUTES
     cdfout.attrs['Project'] = ["PDS>Planetary Data System", "PADC>Paris Astronomical Data Centre"]
@@ -773,11 +819,11 @@ def write_gattr_radiojove_cdf(cdfout, header, time, freq, config, debug=False):
     cdfout.attrs['Software_language'] = 'python'
 
     # SETTING PDS GLOBAL ATTRIBUTES
-    cdfout.attrs['PDS_Start_time'] = time[0].isoformat()+'Z'
-    cdfout.attrs['PDS_Stop_time'] = time[ndata-1].isoformat()+'Z'
+    cdfout.attrs['PDS_Start_time'] = time[0].isoformat() + 'Z'
+    cdfout.attrs['PDS_Stop_time'] = time[ndata - 1].isoformat() + 'Z'
     cdfout.attrs['PDS_Observation_target'] = 'Jupiter'
     cdfout.attrs['PDS_Observation_type'] = 'Radio'
-    
+
     # SETTING VESPA GLOBAL ATTRIBUTES
     cdfout.attrs['VESPA_dataproduct_type'] = "ds>Dynamic Spectra"
     cdfout.attrs['VESPA_target_class'] = "planet"
@@ -785,20 +831,21 @@ def write_gattr_radiojove_cdf(cdfout, header, time, freq, config, debug=False):
     cdfout.attrs['VESPA_feature_name'] = "Radio Emissions#Aurora"
 
     cdfout.attrs['VESPA_time_min'] = jul_date[0]
-    cdfout.attrs['VESPA_time_max'] = jul_date[ndata-1]
+    cdfout.attrs['VESPA_time_max'] = jul_date[ndata - 1]
     cdfout.attrs['VESPA_time_sampling_step'] = header['time_step']
     cdfout.attrs['VESPA_time_exp'] = header['time_integ']
 
-    cdfout.attrs['VESPA_spectral_range_min'] = np.amin(freq)*1e6
-    cdfout.attrs['VESPA_spectral_range_max'] = np.amax(freq)*1e6
-    cdfout.attrs['VESPA_spectral_sampling_step'] = np.median([freq[i+1]-freq[i] for i in range(len(freq)-1)])*1e6
+    cdfout.attrs['VESPA_spectral_range_min'] = np.amin(freq) * 1e6
+    cdfout.attrs['VESPA_spectral_range_max'] = np.amax(freq) * 1e6
+    cdfout.attrs['VESPA_spectral_sampling_step'] = np.median(
+        [freq[i + 1] - freq[i] for i in range(len(freq) - 1)]) * 1e6
     cdfout.attrs['VESPA_spectral_resolution'] = 50.e3
 
     cdfout.attrs['VESPA_instrument_host_name'] = header['obsty_id']
     cdfout.attrs['VESPA_instrument_name'] = header['instr_id']
     cdfout.attrs['VESPA_measurement_type'] = "phys.flux;em.radio"
     cdfout.attrs['VESPA_access_format'] = "application/x-cdf"
-        
+
     # SETTING RADIOJOVE GLOBAL ATTRIBUTES
 
     cdfout.attrs['RadioJOVE_observer_name'] = header['author']
@@ -831,7 +878,7 @@ def write_gattr_radiojove_cdf(cdfout, header, time, freq, config, debug=False):
 
     if debug:
         print(cdfout.attrs)
-    
+
 
 ################################################################################
 # EPOCH variable for CDF
@@ -849,8 +896,8 @@ def write_epoch_radiojove_cdf(cdfout, time, debug=False):
 
     ndata = len(time)
     date_start_round = time[0].replace(minute=0, second=0, microsecond=0)
-    date_stop_round = time[ndata-1].replace(minute=0, second=0, microsecond=0)+datetime.timedelta(hours=1)
-    
+    date_stop_round = time[ndata - 1].replace(minute=0, second=0, microsecond=0) + datetime.timedelta(hours=1)
+
     # SETTING UP VARIABLES AND VARIABLE ATTRIBUTES
     #   The EPOCH variable type must be CDF_TIME_TT2000
     #   PDS-CDF requires no compression for variables.
@@ -865,18 +912,18 @@ def write_epoch_radiojove_cdf(cdfout, time, debug=False):
     cdfout['EPOCH'].attrs['LABLAXIS'] = "Epoch"
     cdfout['EPOCH'].attrs['UNITS'] = "ns"
     cdfout['EPOCH'].attrs['VAR_TYPE'] = "support_data"
-    cdfout['EPOCH'].attrs['SCALETYP'] = "linear" 
+    cdfout['EPOCH'].attrs['SCALETYP'] = "linear"
     cdfout['EPOCH'].attrs['MONOTON'] = "INCREASE"
-    cdfout['EPOCH'].attrs['TIME_BASE'] = "J2000" 
-    cdfout['EPOCH'].attrs['TIME_SCALE'] = "UTC" 
+    cdfout['EPOCH'].attrs['TIME_BASE'] = "J2000"
+    cdfout['EPOCH'].attrs['TIME_SCALE'] = "UTC"
     cdfout['EPOCH'].attrs['REFERENCE_POSITION'] = "Earth"
-    cdfout['EPOCH'].attrs['SI_CONVERSION'] = "1.0e-9>s" 
+    cdfout['EPOCH'].attrs['SI_CONVERSION'] = "1.0e-9>s"
     cdfout['EPOCH'].attrs['UCD'] = "time.epoch"
-    
+
     if debug:
         print(cdfout['EPOCH'])
         print(cdfout['EPOCH'].attrs)
-    
+
 
 ################################################################################
 # FREQUENCY variable for CDF
@@ -897,18 +944,18 @@ def write_frequency_radiojove_cdf(cdfout, header, freq, debug=False):
     cdfout.new('FREQUENCY', data=freq, type=cdf.const.CDF_FLOAT, compress=cdf.const.NO_COMPRESSION, recVary=False)
     cdfout['FREQUENCY'].attrs['CATDESC'] = "Frequency"
     cdfout['FREQUENCY'].attrs['DICT_KEY'] = "electric_field>power"
-    cdfout['FREQUENCY'].attrs['FIELDNAM'] = "FREQUENCY" 
+    cdfout['FREQUENCY'].attrs['FIELDNAM'] = "FREQUENCY"
     cdfout['FREQUENCY'].attrs.new('FILLVAL', data=-1.0e+31, type=cdf.const.CDF_REAL4)
     cdfout['FREQUENCY'].attrs['FORMAT'] = "F6.3"
-    cdfout['FREQUENCY'].attrs['LABLAXIS'] = "Frequency" 
-    cdfout['FREQUENCY'].attrs['UNITS'] = "MHz" 
+    cdfout['FREQUENCY'].attrs['LABLAXIS'] = "Frequency"
+    cdfout['FREQUENCY'].attrs['UNITS'] = "MHz"
     cdfout['FREQUENCY'].attrs.new('VALIDMIN', data=0., type=cdf.const.CDF_REAL4)
     cdfout['FREQUENCY'].attrs.new('VALIDMAX', data=40., type=cdf.const.CDF_REAL4)
     cdfout['FREQUENCY'].attrs['VAR_TYPE'] = "support_data"
     cdfout['FREQUENCY'].attrs['SCALETYP'] = "linear"
     cdfout['FREQUENCY'].attrs.new('SCALEMIN', data=header['fmin'], type=cdf.const.CDF_REAL4)
     cdfout['FREQUENCY'].attrs.new('SCALEMAX', data=header['fmax'], type=cdf.const.CDF_REAL4)
-    cdfout['FREQUENCY'].attrs['SI_CONVERSION'] = "1.0e6>Hz" 
+    cdfout['FREQUENCY'].attrs['SI_CONVERSION'] = "1.0e6>Hz"
     cdfout['FREQUENCY'].attrs['UCD'] = "em.freq"
 
     if debug:
@@ -948,8 +995,8 @@ def write_data_radiojove_cdf(cdfout, header, file_info, packet_size, debug=False
             if debug:
                 print("Creating {} variable".format(var_name))
 
-        # We deal with EDR data (direct output from experiment) in Unsigned 2-byte integers.
-        #   PDS-CDF requires no compression for variables.
+                # We deal with EDR data (direct output from experiment) in Unsigned 2-byte integers.
+                #   PDS-CDF requires no compression for variables.
             cdfout.new(var_name, data=np.zeros((nt, nf)), type=cdf.const.CDF_UINT2,
                        compress=cdf.const.NO_COMPRESSION)
             cdfout[var_name].attrs['CATDESC'] = feed['CATDESC']
@@ -979,23 +1026,25 @@ def write_data_radiojove_cdf(cdfout, header, file_info, packet_size, debug=False
 
     for j in range(0, header['nstep'], packet_size):
         j1 = j
-        j2 = j+packet_size
+        j2 = j + packet_size
         if j2 > nt:
             j2 = nt
 
         if debug:
             if packet_size == 1:
                 print("Loading record #{}".format(j))
-            else: 
+            else:
                 print("Loading records #{} to #{}".format(j1, j2))
 
         data_raw = np.array(
-            read_radiojove_spx_sweep(file_info, j2-j1, debug))[
-                :, file_info['record_data_offset']:file_info['record_data_offset']+header['nfreq']*header['nfeed']
-                ].reshape(j2-j1, header['nfreq'], header['nfeed'])
-                
+            self.read_radiojove_spx_sweep(file_info, j2 - j1, debug))[
+                   :,
+                   file_info['record_data_offset']:file_info['record_data_offset'] + header['nfreq'] * header['nfeed']
+                   ].reshape(j2 - j1, header['nfreq'], header['nfeed'])
+
         for i in range(header['nfeed']):
-            cdfout[header['feeds'][i]['FIELDNAM']][file_info['offset']+j1:file_info['offset']+j2, :] = data_raw[:, :, i]
+            cdfout[header['feeds'][i]['FIELDNAM']][file_info['offset']
+                                                   + j1:file_info['offset'] + j2, :] = data_raw[:, :, i]
 
 
 ################################################################################
@@ -1024,7 +1073,7 @@ def obs_description(obsty, instr, debug=False):
     else:
         desc = "{} {} Spectrograph".format(desc, instr.upper())
     return desc
-    
+
 
 ################################################################################
 # Merge SPS or SPD headers
@@ -1211,7 +1260,7 @@ def spx_to_cdf_daily(file_list, config, debug=False):
                 stop_time = h_tmp['stop_time']
 
         if debug:
-            print("all: {} to {}".format(start_time.isoformat(),stop_time.isoformat()))
+            print("all: {} to {}".format(start_time.isoformat(), stop_time.isoformat()))
 
     if stop_time - start_time > datetime.timedelta(hours=24):
         raise RadioJoveError("Data interval > 24h")
