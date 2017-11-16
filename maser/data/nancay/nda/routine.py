@@ -9,6 +9,7 @@ Python module to work with SRN/NDA/Routine data
 import struct
 import datetime
 import os
+import zeep
 from maser.data.data import MaserDataSweep
 from maser.data.nancay.nda.nda import NDAError
 from maser.data.nancay.nda.nda import NDADataFromFile
@@ -42,6 +43,7 @@ class NDARoutineData(NDADataFromFile):
 
         self.file_info = {'name': self.file, 'size': self.get_file_size()}
         self.detect_format()
+        self.format = self.file_info['format']
         self.set_filedate()
         self.debug = debug
         self.header = self.header_from_file()
@@ -58,9 +60,9 @@ class NDARoutineData(NDADataFromFile):
         self.meta = meta
 
     def get_mime_type(self):
-        if self.file_info['format'] == 'RT1':
+        if self.format == 'RT1':
             return 'application/x-binary-rt1'
-        elif self.file_info['format'] == 'CDF':
+        elif self.format == 'CDF':
             return 'application/x-cdf'
         else:
             raise NDARoutineError("Wrong file format")
