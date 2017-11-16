@@ -283,7 +283,7 @@ class CDPPDataFromFile(MaserDataFromFile):
 
     def get_epncore(self):
 
-        md = dict()
+        md = MaserDataFromFile.get_epncore(self)
 
         md["granule_uid"] = "{}_{}".format(self.name.lower(),self.file.lower())
         md["granule_gid"] = self.name.lower()
