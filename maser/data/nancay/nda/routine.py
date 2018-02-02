@@ -422,9 +422,9 @@ class NDARoutineSweepRT1(MaserDataSweep):
             self.load_data()
 
         if self.index % 2 == 0:
-            self.data['polar'] = 'LH'
+            self.data['polar'] = 'LL'
         else:
-            self.data['polar'] = 'RH'
+            self.data['polar'] = 'RR'
 
     def load_data(self):
 
@@ -507,17 +507,20 @@ class NDARoutineSweepCDF(MaserDataSweep):
         self.data['epoch'] = f['Epoch'][self.index]
         self.data['data'] = dict()
         self.data['loaded'] = False
-        self.data['status'] = {'LH': 0, 'RH': 0}
+        self.data['status'] = {'LL': 0, 'RR': 0}
 
         if load_data:
             self.load_data()
 
-        self.data['polar'] = ['LH', 'RH']
+        self.data['polar'] = ['LL', 'RR']
 
-    def load_data(self):
+    def load_data(self, polar=None):
         f = self.parent.file_handle
-        self.data['data']['LH'] = f['LL'][self.index]
-        self.data['data']['RH'] = f['RR'][self.index]
+        if polar is not None:
+            self.data['data'][polar] = f[polar_keys[polar]][self.index]
+        else:
+            self.data['data']['LL'] = f['LL'][self.index]
+            self.data['data']['RR'] = f['RR'][self.index]
         self.data['RR_SWEEP_TIME_OFFSET'] = f['RR_SWEEP_TIME_OFFSET'][self.index]
         self.data['status'] = f['STATUS'][self.index]
         self.data['loaded'] = True
@@ -531,8 +534,8 @@ class NDARoutineSweepCDF(MaserDataSweep):
         if not self.data['loaded']:
             self.load_data()
         data_in_db = dict()
-        data_in_db['LH'] = [item * 0.3125 for item in self.data['data']['LH']]
-        data_in_db['RH'] = [item * 0.3125 for item in self.data['data']['RH']]
+        data_in_db['LL'] = [item * 0.3125 for item in self.data['data']['LL']]
+        data_in_db['RR'] = [item * 0.3125 for item in self.data['data']['RR']]
         return data_in_db
 
     def get_datetime(self):
