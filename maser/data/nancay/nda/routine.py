@@ -119,8 +119,7 @@ class NDARoutineData(NDADataFromFile):
         pass
 
     def get_time_axis(self):
-        return [self.get_single_sweep(item).get_datetime() for item in range(len(self))]
-
+        pass
 
 class NDARoutineDataRT1(NDARoutineData):
 
@@ -321,6 +320,8 @@ class NDARoutineDataRT1(NDARoutineData):
         return [i/400*(self.meta['freq_max']-self.meta['freq_min'])+self.meta['freq_min']
                 for i in range(self.meta['freq_len'])]
 
+    def get_time_axis(self):
+        return [self.get_single_sweep(item, False).get_datetime() for item in range(len(self))]
 
 class NDARoutineDataCDF(NDARoutineData):
 
@@ -385,6 +386,10 @@ class NDARoutineDataCDF(NDARoutineData):
         for item in self.file_handle['Frequency']:
             freq.append(float(item))
         return freq
+
+    def get_time_axis(self):
+        return self.file_handle['Epoch']
+
 
 class NDARoutineSweepRT1(MaserDataSweep):
 
@@ -459,6 +464,8 @@ class NDARoutineSweepRT1(MaserDataSweep):
         return self.data['data']
 
     def get_data_in_db(self):
+        if not self.data['loaded']:
+            self.load_data()
         return [item * 0.3125 for item in self.data['data']]
 
     def fix_hms_time(self):
@@ -497,16 +504,39 @@ class NDARoutineSweepCDF(MaserDataSweep):
         self.data = dict()
 
         f = self.parent.file_handle
-        self.data['Epoch'] = f['Epoch'][index_input]
-        self.data['data'] = {'LH': f['LL'][index_input], 'RH': f['RR'][index_input]}
-        self.data['RR_SWEEP_TIME_OFFSET'] = f['RR_SWEEP_TIME_OFFSET'][index_input]
-        self.data['STATUS'] = f['STATUS'][index_input]
-        self.data['loaded'] = True
+        self.data['epoch'] = f['Epoch'][self.index]
+        self.data['data'] = dict()
+        self.data['loaded'] = False
+        self.data['status'] = {'LH': 0, 'RH': 0}
+
+        if load_data:
+            self.load_data()
 
         self.data['polar'] = ['LH', 'RH']
 
+    def load_data(self):
+        f = self.parent.file_handle
+        self.data['data']['LH'] = f['LL'][self.index]
+        self.data['data']['RH'] = f['RR'][self.index]
+        self.data['RR_SWEEP_TIME_OFFSET'] = f['RR_SWEEP_TIME_OFFSET'][self.index]
+        self.data['status'] = f['STATUS'][self.index]
+        self.data['loaded'] = True
+
+    def get_data(self):
+        if not self.data['loaded']:
+            self.load_data()
+        return self.data['data']
+
+    def get_data_in_db(self):
+        if not self.data['loaded']:
+            self.load_data()
+        data_in_db = dict()
+        data_in_db['LH'] = [item * 0.3125 for item in self.data['data']['LH']]
+        data_in_db['RH'] = [item * 0.3125 for item in self.data['data']['RH']]
+        return data_in_db
+
     def get_datetime(self):
-        return self.data['Epoch']
+        return self.data['epoch']
 
     def get_time(self):
         return self.get_datetime().time()

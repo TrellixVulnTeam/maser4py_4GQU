@@ -120,7 +120,7 @@ class NancayNDARoutineDataCDFClass(unittest.TestCase):
 
 class NancayNDARoutineSweepRT1Class(unittest.TestCase):
 
-    """Test case for NDARoutineSweep class"""
+    """Test case for NDARoutineSweepRT1 class"""
 
     def test_polar(self):
         sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0)
@@ -164,3 +164,43 @@ class NancayNDARoutineSweepRT1Class(unittest.TestCase):
         self.assertEqual(sweep.get_datetime(), datetime.datetime(2016, 1, 30, 22, 47, 6, 30000))
         sweep = o_rt1.get_last_sweep()
         self.assertEqual(sweep.get_datetime(), datetime.datetime(2016, 1, 31, 6, 45, 59, 680000))
+
+
+class NancayNDARoutineSweepCDFClass(unittest.TestCase):
+
+    """Test case for NDARoutineSweepCDF class"""
+
+    def test_polar(self):
+        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        self.assertEqual(sweep.data['polar'], ['LH', 'RH'])
+
+    def test_load_data(self):
+        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0, False)
+        self.assertEqual(len(sweep.data['data']), 0)
+        sweep.load_data()
+        self.assertEqual(len(sweep.data['data']), 2)
+        self.assertEqual(len(sweep.data['data']['LH']), 400)
+        self.assertEqual(len(sweep.data['data']['RH']), 400)
+
+    def test_get_data(self):
+        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        direct = sweep.data['data']
+        method = sweep.get_data()
+        self.assertEqual(direct, method)
+        self.assertEqual(direct['LH'][0], 32)
+        self.assertEqual(direct['LH'][399], 69)
+
+    def test_get_data_in_db(self):
+        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        data = sweep.get_data_in_db()
+        self.assertEqual(data['LH'][0], 10.0)
+
+    def test_get_time(self):
+        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        self.assertEqual(sweep.get_time(), datetime.time(22, 47, 6, 30000))
+
+    def test_get_datetime(self):
+        sweep = o_cdf.get_first_sweep()
+        self.assertEqual(sweep.get_datetime(), datetime.datetime(2016, 1, 30, 22, 47, 6, 30000))
+        sweep = o_cdf.get_last_sweep()
+        self.assertEqual(sweep.get_datetime(), datetime.datetime(2016, 1, 31, 6, 45, 58, 680000))
