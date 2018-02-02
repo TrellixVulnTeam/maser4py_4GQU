@@ -517,7 +517,7 @@ class NDARoutineSweepCDF(MaserDataSweep):
     def load_data(self, polar=None):
         f = self.parent.file_handle
         if polar is not None:
-            self.data['data'][polar] = f[polar_keys[polar]][self.index]
+            self.data['data'][polar] = f[polar][self.index]
         else:
             self.data['data']['LL'] = f['LL'][self.index]
             self.data['data']['RR'] = f['RR'][self.index]
