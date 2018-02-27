@@ -8,6 +8,7 @@ Python module to work with PDS/PPI/Voyager/PRA Data
 
 import datetime
 import os
+from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject
 from maser.data.data import MaserDataFromInterval
 from maser.data.data import MaserError
 
@@ -15,17 +16,58 @@ __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC, Observatoire de Paris"
 __credits__ = ["Baptiste Cecconi"]
 __license__ = "GPLv3"
-__version__ = "1.0b0"
+__version__ = "1.0b2"
 __maintainer__ = "Baptiste Cecconi"
 __email__ = "baptiste.cecconi@obspm.fr"
 __status__ = "Production"
-__date__ = "11-SEP-2017"
-__project__ = "MASER/PADC"
+__date__ = "27-FEB-2018"
+__project__ = "MASER/PADC PDS/PPI/Voyager"
 
-__all__ = ["PDSPPIVoyagerPRAJupiterData"]
+__all__ = ["PDSPPIVoyagerPRADataFromLabel"]
 
 default_root_data_path = "/Users/baptiste/Volumes/kronos-dio/voyager/data/pra/PDS_data/"
 
+
+class PDSPPIVoyagePRADataObject(PDSDataObject):
+
+    def __init__(self, product, parent, obj_label, obj_name, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSPPIVoyagePRADataObject.__init__()")
+
+        PDSDataObject.__init__(self, product, parent, obj_label, obj_name, verbose, debug)
+        self.data = self.data_from_object_type()
+
+        if self.debug:
+            print("PDSPPIVoyagePRADataObject instance created")
+
+    def data_from_object_type(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagePRADataObject.data_from_object_type()")
+
+        if self.obj_type == 'TABLE':
+            return PDSDataTableObject(self.product, self, self.label, self.verbose, self.debug)
+
+    def load_data(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagePRADataObject.load_data()")
+
+        self.data.load_data()
+
+
+class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
+
+    def __init__(self, file, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSPPIVoyagerPRADataFromLabel.__init__()")
+
+        PDSDataFromLabel.__init__(self, file, PDSPPIVoyagePRADataObject, verbose, debug)
+
+
+"""
 
 class PDSPPIVoyagerPRAJupiterData(MaserDataFromInterval):
 
@@ -164,3 +206,4 @@ class PDSPPIVoyagerPRAJupiterData(MaserDataFromInterval):
 
         return result
 
+"""
