@@ -10,6 +10,7 @@ import math
 import datetime
 import dateutil.parser
 from astropy.io import fits
+import subprocess
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."
@@ -19,8 +20,19 @@ __project__ = "MASER"
 
 __all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord", "MaserDataSweep"]
 
-pds_bin = '/Users/baptiste/Projets/VOParis/igpp-git/pds-cdf-1.0.11/bin/'
-cdf_bin = '/Applications/cdf/cdf/bin/'
+### defining local library paths
+
+# Path to bin directory of IGPP/PDS/CDF library: http://release.igpp.ucla.edu/pds/cdf/
+_pdscdf_bin = '/Users/baptiste/Projets/VOParis/igpp-git/pds-cdf-1.0.11/bin/'
+
+# Path to bin directory of CDF C library: https://spdf.sci.gsfc.nasa.gov/pub/software/cdf/dist/cdf36_4/
+_libcdf_bin = '/Applications/cdf/cdf/bin/'
+
+# Path to bin directory of IGPP/Docgen library: http://release.igpp.ucla.edu/igpp/docgen/index.html
+_docgen_bin = '/Users/baptiste/Projets/VOParis/igpp/docgen/bin/'
+
+# local directory path
+_local_path = os.path.dirname(__file__)
 
 
 class MaserError(Exception):
@@ -46,6 +58,21 @@ class MaserData(object):
         self.start_time = None
         self.end_time = None
         self.dataset_name = None
+
+    @staticmethod
+    def _lib_path() -> dict:
+        """
+        Loads the paths of the useful local libraries. First tries to load from environment variable, then uses the paths
+        defined in this module
+        :return: lib_path
+        """
+
+        lib_path = dict()
+        lib_path['pdscdf_bin'] = os.environ.get('PDSCDF_BIN', _pdscdf_bin)
+        lib_path['libcdf_bin'] = os.environ.get('CDF_BIN', _libcdf_bin)
+        lib_path['docgen_bin'] = os.environ.get('DOCGEN_BIN', _docgen_bin)
+
+        return lib_path
 
     def get_epncore_meta(self):
         md = dict()
@@ -115,7 +142,7 @@ class MaserDataFromFile(MaserData):
     MaserDataFromFile class for MaserData objects built from a file
     """
 
-    def __init__(self, file, verbose=True, debug=False):
+    def __init__(self, file, verbose=False, debug=False):
         """
         Method instantiate a MaserData object from a file
         :param file: input file (including path to file)
@@ -210,7 +237,7 @@ class MaserDataFromFileCDF(MaserDataFromFile):
         else:
             verb_arg = ''
 
-        shell_command = "{}cdfcheck {} {}".format(pds_bin, verb_arg, self.file)
+        shell_command = "{}cdfcheck {} {}".format(_pdscdf_bin, verb_arg, self.file)
 
         if self.verbose:
             print(shell_command)
@@ -223,7 +250,7 @@ class MaserDataFromFileCDF(MaserDataFromFile):
             print("### [Fix CDF --- cdfconvert to self]")
 
         shell_command = "{0}cdfconvert {1} /tmp/cdfconvert_tmp.cdf; " \
-                        "mv /tmp/cdfconvert_tmp.cdf {1}".format(cdf_bin, self.file)
+                        "mv /tmp/cdfconvert_tmp.cdf {1}".format(_libcdf_bin, self.file)
 
         if self.verbose:
             print(shell_command)
@@ -232,6 +259,13 @@ class MaserDataFromFileCDF(MaserDataFromFile):
 
     def get_mime_type(self):
         return 'application/x-cdf'
+
+    def build_pds4_label(self):
+
+        java_process_list = ['java', '-jar', "{}jar/igpp.docgen.jar".format(_docgen_bin),
+                             '-t {}'.format(os.path.join(_local_path, 'templates')),
+                             'cdf:{}'.format(self.file), 'maser_cdf_pds4_label_template.vm']
+        subprocess.call(java_process_list)
 
 
 class MaserDataFromFileFITS(MaserDataFromFile):
@@ -313,4 +347,4 @@ class MaserDataSweep(MaserData):
         Method to get the datetime of the current sweep (or start of sweep).
         :return: datetime.datetime object
         """
-        return None
+        pass
