@@ -22,7 +22,7 @@ __status__ = "Development"
 __date__ = "27-FEB-2017"
 __project__ = "MASER/PDS PDS/Cassini/RPWS"
 
-__ALL__ = ['CassiniRPWSWBRFullResDataFromLabel', 'CassiniRPWSHFRLowRateFullDataFromLabel']
+__ALL__ = ['CassiniRPWSWBRFullResDataFromLabel']
 
 
 def is_bit_set(x, n):
@@ -216,12 +216,12 @@ class PDSPPICassiniRPWSWBRRowPrefixTable(PDSDataTableObject):
 
 class PDSPPICassiniRPWSWBRFullResDataFromLabel(PDSDataFromLabel):
 
-    def __init__(self, file, verbose=False, debug=False):
+    def __init__(self, file, load_data=True, verbose=False, debug=False):
 
         if debug:
             print("### This is PDSPPICassiniRPWSWBRFullResDataFromLabel.__init__()")
 
-        PDSDataFromLabel.__init__(self, file, PDSPPICassiniRPWSWBRDataObject, verbose, debug)
+        PDSDataFromLabel.__init__(self, file, load_data, PDSPPICassiniRPWSWBRDataObject, verbose, debug)
 
     def get_start_sample_datetime(self):
         date0 = datetime.datetime(1958, 1, 1)
