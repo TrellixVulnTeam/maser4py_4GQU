@@ -593,7 +593,7 @@ class PDSDataTableObject(dict):
             for ii, line in enumerate(f.readlines()):
                 for cur_col in self.columns:
                     cur_name = cur_col.name
-                    cur_byte_start = int(cur_col.start_byte) - 1
+                    cur_byte_start = int(cur_col.start_byte)
                     cur_byte_length = int(cur_col.bytes)
                     if cur_col.n_items == 1:
                         if self.verbose:
