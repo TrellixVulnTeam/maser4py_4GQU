@@ -8,15 +8,22 @@ For more info on CCSDS time formats, refer to "TIME CODE FORMATS" CCSDS 301.0-B-
 """
 
 import datetime
-from maser.data.data import MaserDataFromFile
+import requests
+import dateutil.parser
+import time
+import json
+import os
+from maser.data.data import MaserDataFromFile, MaserError
+import socket
+hostname = socket.getfqdn()
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."
-__date__ = "10-JUL-2017"
-__version__ = "0.11"
+__date__ = "23-JAN-2018"
+__version__ = "0.12"
 __project__ = "MASER/CDPP"
 
-__all__ = ["CDPPDataFromFile"]
+__all__ = ["CDPPDataFromFile", "CDPPDataFromWebService"]
 
 
 class CCSDSDate:
@@ -285,7 +292,7 @@ class CDPPDataFromFile(MaserDataFromFile):
 
         md = MaserDataFromFile.get_epncore(self)
 
-        md["granule_uid"] = "{}_{}".format(self.name.lower(),self.file.lower())
+        md["granule_uid"] = "{}_{}".format(self.name.lower(), self.file.lower())
         md["granule_gid"] = self.name.lower()
         md["obs_id"] = self.file.lower()
         md["dataproduct_type"] = "ds"
@@ -345,3 +352,97 @@ class CDPPDataFromFile(MaserDataFromFile):
         md["time_origin"] = md["instrument_host_name"]
 
         return md
+
+
+class CDPPDataFromWebService(CDPPDataFromFile):
+
+    def __init__(self, user, password, start_date=None, stop_date=None,
+                 mission_name=None, instrument_name=None, dataset_name=None):
+        self.mission_name = mission_name
+        self.instrument_name = instrument_name
+        self.dataset_name = dataset_name
+        self.start_time = dateutil.parser.parse(start_date)
+        self.stop_time = datetime.datetime.strptime(stop_date)
+
+        self.auth = {"user": user, "password": password}
+        self.auth_token = {}
+        self.get_auth_token()
+
+        if hostname == 'macbookbc.obspm.fr':
+            self.download_dir = "/Users/baptiste/Projets/CDPP/Archivage/_Downloads/{}/{}/{}"\
+                .format(mission_name, instrument_name, dataset_name)
+        elif hostname == 'voparis-maser-das.obspm.fr':
+            self.download_dir = "/cache/cdpp-data/{}/{}/{}".format(mission_name, instrument_name, dataset_name)
+
+        self.cdpp_host = "https://cdpp-archive.cnes.fr"
+        self.header = {}
+        self.data = {}
+        self.name = ""
+
+        CDPPDataFromFile.__init__(self, self.file, self.header, self.data, self.name)
+
+    def get_auth_token(self):
+
+        cdpp_auth_url = "{}/userauthenticate-rest/oauth/token".format(self.cdpp_host)
+        cdpp_auth_data = "client_id=ria&client_secret=123456789&grant_type=password&username={}&password={}"\
+            .format(self.auth['user'], self.auth['password']).encode('ascii')
+        cdpp_auth_header = {'Content-type': 'application/x-www-form-urlencoded'}
+        with requests.post(cdpp_auth_url, cdpp_auth_data, headers=cdpp_auth_header) as r:
+            self.auth_token = json.loads(r.text)
+
+    def get_instruments(self, mission_name):
+
+        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+        cdpp_instruments_rest = "{}/cdpp-rest/cdpp/cdpp/missions/{}/instruments".format(self.cdpp_host, mission_name)
+        with requests.get(cdpp_instruments_rest, headers=cdpp_header_auth) as r:
+            return json.loads(r.text)
+
+    def get_datasets(self, mission_name, instrument_name):
+
+        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+        cdpp_datasets_rest = "{}/cdpp-rest/cdpp/cdpp/datasets?mission={}&instrument={}"\
+            .format(self.cdpp_host, mission_name, instrument_name)
+        with requests.get(cdpp_datasets_rest, headers=cdpp_header_auth) as r:
+            return json.loads(r.text)
+
+    def get_files_async(self, start_date, stop_date, dataset_name):
+
+        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+        cdpp_command_async = "{}/cdpp-rest/cdpp/cdpp/datasets/{}/files?startdate={}&stopdate={}"\
+            .format(self.cdpp_host, dataset_name, start_date.isoformat(), stop_date.isoformat())
+        with requests.get(cdpp_command_async, headers=cdpp_header_auth) as r:
+            rr = json.loads(r.text)
+            order_id = rr["results"]
+
+        cdpp_order_status = "{}/command-rest/cdpp/command/orders/{}/status".format(self.cdpp_host, order_id)
+        while True:
+            with requests.get(cdpp_order_status, headers=cdpp_header_auth) as r:
+                rr = json.loads(r.text)
+                order_status = rr["results"]
+                if order_status == "TERMINATED_OK":
+                    break
+                elif order_status.endswith("_CANCELLED") \
+                        or order_status.endswith("_FAILED") \
+                        or order_status == "DELETED":
+                    raise MaserError("CDPP REST interface: ORDER status = {}".format(order_status))
+            time.sleep(0.5)
+
+        cdpp_order_result = "{}/userworkspace-rest/cdpp/userworkspace/orders/{}/files"\
+            .format(self.cdpp_host, order_id)
+        with requests.get(cdpp_order_result, headers=cdpp_header_auth):
+            rr = json.loads(r.text)
+            order_files = rr["results"]
+            for item in order_files:
+                cdpp_order_file = "{}/userworkspace-rest/download/cdpp/userworkspace/file/{}/{}/?access_token={}"\
+                    .format(self.cdpp_host, self.auth['user'], item, self.auth_token['access_token'])
+                order_basename = item.split['/'][-1]
+                with requests.get(cdpp_order_file) as r, open(os.path.join(self.download_dir, order_basename), 'wb') as f:
+                    f.write(r.content)
+
+    def download_file_sync(self):
+
+        file_name = self.file
+        cdpp_command_url = "{}/command-rest/download/cdpp/command/data/object/{}?access_token={}"\
+            .format(self.cdpp_host, file_name, self.auth_token["access_token"])
+        with requests.get(cdpp_command_url) as r, open(os.path.join(self.download_dir, file_name), 'wb') as f:
+            f.write(r.content)
