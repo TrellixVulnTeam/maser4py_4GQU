@@ -6,11 +6,9 @@ Python module to work with PDS/PPI/Voyager/PRA Data
 @author: B.Cecconi(LESIA)
 """
 
-import datetime
-import os
-from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject
-from maser.data.data import MaserDataFromInterval
-from maser.data.data import MaserError
+import numpy
+import struct
+from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSDataTimeSeriesObject
 
 __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC, Observatoire de Paris"
@@ -28,48 +26,78 @@ __all__ = ["PDSPPIVoyagerPRADataFromLabel"]
 default_root_data_path = "/Users/baptiste/Volumes/kronos-dio/voyager/data/pra/PDS_data/"
 
 
-class PDSPPIVoyagePRADataObject(PDSDataObject):
+class PDSPPIVoyagerPRADataObject(PDSDataObject):
 
     def __init__(self, product, parent, obj_label, obj_name, verbose=False, debug=False):
 
         if debug:
-            print("### This is PDSPPIVoyagePRADataObject.__init__()")
+            print("### This is PDSPPIVoyagerPRADataObject.__init__()")
 
         PDSDataObject.__init__(self, product, parent, obj_label, obj_name, verbose, debug)
         self.data = self.data_from_object_type()
 
         if self.debug:
-            print("PDSPPIVoyagePRADataObject instance created")
+            print("PDSPPIVoyagerPRADataObject instance created")
 
     def data_from_object_type(self):
 
         if self.debug:
-            print("### This is PDSPPIVoyagePRADataObject.data_from_object_type()")
+            print("### This is PDSPPIVoyagerPRADataObject.data_from_object_type()")
 
         if self.obj_type == 'TABLE':
             return PDSDataTableObject(self.product, self, self.label, self.verbose, self.debug)
+        elif self.obj_type == 'TIME_SERIES':
+            return PDSDataTimeSeriesObject(self.product, self, self.label, self.verbose, self.debug)
+        elif self.obj_type == 'HEADER_TABLE':
+            return PDSDataTableObject(self.product, self, self.label, self.verbose, self.debug)
+        elif self.obj_type == 'F1_F2_TIME_SERIES':
+            return PDSPPIVoyagerPRAHighRateDataTimeSeriesObject(self.product, self, self.label, self.verbose, self.debug)
+        elif self.obj_type == 'F3_F4_TIME_SERIES':
+            return PDSPPIVoyagerPRAHighRateDataTimeSeriesObject(self.product, self, self.label, self.verbose, self.debug)
+
+
+class PDSPPIVoyagerPRAHighRateDataTimeSeriesObject(PDSDataTimeSeriesObject):
+
+    def __init__(self, product, parent, obj_label, verbose=True, debug=False):
+
+        if debug:
+            print("### This is PDSPPIVoyagerPRAHighRateDataTimeSeriesObject.__init__()")
+
+        PDSDataTimeSeriesObject.__init__(self, product, parent, obj_label, verbose, debug)
 
     def load_data(self):
 
         if self.debug:
-            print("### This is PDSPPIVoyagePRADataObject.load_data()")
+            print("### This is PDSPPIVoyagerPRAHighRateDataTimeSeriesObject.load_data()")
 
-        self.data.load_data()
+        PDSDataTableObject.load_data(self)
+        self._fix_sample_pair_data()
+
+    def _fix_sample_pair_data(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRAHighRateDataTimeSeriesObject._fix_sample_pair_data()")
+
+        sample_pair_data = self['SAMPLE_PAIR']
+        self['SAMPLE_PAIR'] = numpy.zeros((self.n_rows, self.n_columns, 2), numpy.int16)
+        for ii in range(self.n_rows):
+            for jj in range(self.n_columns):
+                self['SAMPLE_PAIR'][ii, jj, :] = struct.unpack('2H', struct.pack('I', sample_pair_data[ii, jj]))
 
 
 class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
 
-    def __init__(self, file, verbose=False, debug=False):
+    def __init__(self, file, load_data=True, verbose=False, debug=False):
 
         if debug:
             print("### This is PDSPPIVoyagerPRADataFromLabel.__init__()")
 
-        PDSDataFromLabel.__init__(self, file, PDSPPIVoyagePRADataObject, verbose, debug)
+        PDSDataFromLabel.__init__(self, file, load_data, PDSPPIVoyagerPRADataObject, verbose, debug)
 
 
 """
 
-class PDSPPIVoyagerPRAJupiterData(MaserDataFromInterval):
+class PDSPPIVoyagerPRADataFromInterval(MaserDataFromInterval):
 
     def __init__(self, start_time, end_time, sc_id=1, root_data_path=default_root_data_path,
                  verbose=False, debug=False):
