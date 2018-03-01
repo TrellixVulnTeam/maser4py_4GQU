@@ -214,7 +214,7 @@ class MaserDataFromFile(MaserData):
     def __ne__(self, other):
         return self.get_file_name() != other.get_file_name()
 
-    def get_epncore(self):
+    def get_epncore_meta(self):
         md = MaserData.get_epncore_meta(self)
         md['filename'] = self.get_file_name()
         md['access_format'] = self.get_mime_type()
@@ -331,7 +331,7 @@ class MaserDataRecord(object):
 
 class MaserDataSweep(MaserData):
 
-    def __init__(self, parent, index):
+    def __init__(self, parent, index, verbose=False, debug=False):
         MaserData.__init__(self)
         self.parent = parent
         self.data = None
