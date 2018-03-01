@@ -21,7 +21,7 @@ __version__ = "1.0b2"
 __maintainer__ = "Baptiste Cecconi"
 __email__ = "baptiste.cecconi@obspm.fr"
 __status__ = "Production"
-__date__ = "27-FEB-2018"
+__date__ = "28-FEB-2018"
 __project__ = "MASER/PADC PDS"
 
 __all__ = ["PDSDataFromLabel"]
@@ -38,6 +38,10 @@ class PDSLabelDict(dict):
         """
 
         def __init__(self, label_file, verbose=False, debug=False):
+
+            if debug:
+                print("### This is PDSLabelDict._PDSLabelList.__init__()")
+
             list.__init__(self)
             self.debug = debug
             self.verbose = verbose
@@ -55,6 +59,9 @@ class PDSLabelDict(dict):
             The method recursively loads any other .FMT files, for each ^STRUCTURE key.
             """
 
+            if self.debug:
+                print("### This is PDSLabelDict._PDSLabelList._load_pds3_label_as_list()")
+
             # If no input_file is set, retrieve current PDSLabelList file from self
             if input_file is None:
                 input_file = self.file
@@ -67,7 +74,7 @@ class PDSLabelDict(dict):
 
                 for line in f.readlines():
 
-                    if self.debug:
+                    if self.verbose:
                         print(line)
 
                     # if end of label file tag, then stop the loop
@@ -76,7 +83,7 @@ class PDSLabelDict(dict):
 
                     # skipping comment lines and empty lines
                     elif line.startswith('/*') or line.strip() == '':
-                        if self.debug:
+                        if self.verbose:
                             print("... skipping.")
                         continue
 
@@ -85,7 +92,7 @@ class PDSLabelDict(dict):
                         kv = line.strip().split('=')
                         cur_key = kv[0].strip()
                         cur_val = kv[1].strip().strip('"')
-                        if self.debug:
+                        if self.verbose:
                             print("... key = {}, value = {}".format(cur_key, cur_val))
 
                         # in case of external FMT file, nested call to this function with the FMT file
@@ -109,6 +116,9 @@ class PDSLabelDict(dict):
             """
             This method merges multiple line values
             """
+
+            if self.debug:
+                print("### This is PDSLabelDict._PDSLabelList._merge_multiple_line_values()")
 
             prev_ii = 0
             remove_list = []
@@ -144,6 +154,9 @@ class PDSLabelDict(dict):
         def _add_object_depth_to_label_list(self):
             """Adds an extra elements after in each (key, value) containing the current object depth"""
 
+            if self.debug:
+                print("### This is PDSLabelDict._PDSLabelList._add_object_depth_to_label_list()")
+
             depth = []
             remove_list = []
 
@@ -171,6 +184,10 @@ class PDSLabelDict(dict):
             self.process.append('Added depth tag')
 
     def __init__(self, label_file, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSLabelDict.__init__()")
+
         dict.__init__(self)
         self.debug = debug
         self.verbose = verbose
@@ -181,6 +198,9 @@ class PDSLabelDict(dict):
 
     def _label_list_to_dict(self, label_list):
         """This function transforms PDS3 Label list into a PDS3 Label dict"""
+
+        if self.debug:
+            print("### This is PDSLabelDict._label_list_to_dict()")
 
         for item in label_list:
             (cur_key, cur_value, cur_depth) = item
@@ -210,25 +230,38 @@ class PDSError(MaserError):
 
 
 class PDSDataObject(MaserDataFromFile):
+
     def __init__(self, product, parent, obj_label, obj_name, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSDataObject.__init__()")
+
         self.verbose = verbose
         self.debug = debug
         self.product = product
         self.parent = parent
         self.obj_type = obj_name
         self.label = obj_label
-        data_file = product.pointers[obj_name]
+        data_file = product.pointers[obj_name]['file_name']
         MaserDataFromFile.__init__(self, data_file, verbose, debug)
-        self.data = self.data_from_object_type()
+        self.data = None
+        self.data_offset_in_file = product.pointers[obj_name]['byte_offset']
+        self.data_loaded = False
 
     def data_from_object_type(self):
-        if self.obj_type == 'TABLE':
-            return PDSDataTableObject(self.product, self, self.label, self.verbose, self.debug)
-        else:
-            raise PDSError('Object type {} not yet implemented'.format(self.obj_type))
+
+        if self.debug:
+            print("### This is PDSDataObject.data_from_object_type()")
+
+        pass
 
     def load_data(self):
+
+        if self.debug:
+            print("### This is PDSDataObject.load_data()")
+
         self.data.load_data()
+        self.data_loaded = True
 
 
 class PDSDataFromLabel(MaserDataFromFile):
@@ -243,15 +276,20 @@ class PDSDataFromLabel(MaserDataFromFile):
         header: header info (depending on each volume)
         object: dict containing {object_name: MaserDataFromFile(object_file)} elements
     Methods:
+        _decode_pointer(self, str_pointer)
         _detect_pointers(self)
         _detect_data_object_type(self)
-        _load_data(self)
+        _fix_object_label_entries(self)
+        load_data(self)
         get_single_sweep(self, index)
         get_first_sweep(self)
         get_last_sweep(self)
     """
 
-    def __init__(self, file, verbose=False, debug=False):
+    def __init__(self, file, load_data_input=True, data_object_class=PDSDataObject, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSDataFromLabel.__init__()")
 
         if not file.lower().endswith('.lbl'):
             raise PDSError('Select label file instead of data file')
@@ -260,7 +298,7 @@ class PDSDataFromLabel(MaserDataFromFile):
         self.verbose = verbose
         self.label_file = file
         MaserDataFromFile.__init__(self, file, verbose, debug)
-
+        self.PDSDataObject = data_object_class
         self.label = PDSLabelDict(self.label_file, verbose, debug)
         self.pointers = self._detect_pointers()
         self.objects = self._detect_data_object_type()
@@ -270,29 +308,84 @@ class PDSDataFromLabel(MaserDataFromFile):
         self.header = None
         self.object = {}
 
+        self.load_data_flag = self._initialize_load_data_flag()
+        self._update_load_data_flag(load_data_input)
+
         for cur_data_obj in self.objects:
 
             if self.debug:
                 print("Processing object: {}".format(cur_data_obj))
 
-            self.object[cur_data_obj] = PDSDataObject(self, self, self.label[cur_data_obj], cur_data_obj,
-                                                      self.verbose, self.debug)
+            self.object[cur_data_obj] = self.PDSDataObject(self, self, self.label[cur_data_obj], cur_data_obj,
+                                                           self.verbose, self.debug)
 
             if self.debug:
                 print("Loading data into object: {}".format(cur_data_obj))
 
-            self.object[cur_data_obj].load_data()
+        self.load_data()
+
+    def _initialize_load_data_flag(self):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._initialize_load_data_flag()")
+
+        return dict(zip(self.objects, [False] * len(self.objects)))
+
+    def _update_load_data_flag(self, load_data_input):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._update_load_data_flag()")
+
+        if isinstance(load_data_input, bool):
+            if load_data_input:
+                for item in self.objects:
+                    self.load_data_flag[item] = True
+        elif isinstance(load_data_input, list):
+            for item in load_data_input:
+                if item in self.objects:
+                    self.load_data_flag[item] = True
+                else:
+                    print("Warning object name unknown, can't load it. ({})".format(str(item)))
+        elif isinstance(load_data_input, str):
+            if load_data_input in self.objects:
+                self.load_data_flag[load_data_input] = True
+            else:
+                print("Warning object name unknown, can't load it. ({})".format(str(load_data_input)))
+        else:
+            print("Warning object name(s) unknown, can't load it. ({})".format(str(load_data_input)))
+
+    def _decode_pointer(self, str_pointer):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._decode_pointer()")
+
+        dict_pointer = {}
+        if str_pointer.startswith("("):
+            str_pointer_tmp = str_pointer.strip()[1:-1].split(',')
+            basename = str_pointer_tmp[0].strip('"')
+            str_offset = str_pointer_tmp[1].strip()
+            if str_offset.endswith('<BYTES>'):
+                byte_offset = int(str_offset[:-7].strip())-1
+            else:
+                byte_offset = (int(str_offset.strip())-1) * int(self.label['RECORD_BYTES'])
+        else:
+            basename = str_pointer.strip().strip('"')
+            byte_offset = 0
+
+        dict_pointer['file_name'] = os.path.join(os.path.dirname(self.file), basename)
+        dict_pointer['byte_offset'] = byte_offset
+
+        return dict_pointer
 
     def _detect_pointers(self):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._detect_pointers()")
+
         pointers = {}
         for key in self.label.keys():
             if key.startswith('^'):
-                value = self.label[key]
-                if value.startswith('('):
-                    basename = value.split('"')[1]
-                else:
-                    basename = value
-                pointers[key[1:]] = os.path.join(os.path.dirname(self.file), basename)
+                pointers[key[1:]] = self._decode_pointer(self.label[key])
 
         if self.debug:
             print("Pointer(s) found: {}".format(', '.join(list(pointers.keys()))))
@@ -300,6 +393,10 @@ class PDSDataFromLabel(MaserDataFromFile):
         return pointers
 
     def _detect_data_object_type(self):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._detect_data_object_type()")
+
         data_types = []
         for item in self.pointers.keys():
             if item in self.label.keys():
@@ -311,12 +408,24 @@ class PDSDataFromLabel(MaserDataFromFile):
         return data_types
 
     def _fix_object_label_entries(self):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel._fix_object_label_entries()")
+
         for item in self.objects:
             self.label[item] = self.label[item][0]
 
-    def _load_data(self):
-        for cur_data_obj in self.object.keys():
-            self.object[cur_data_obj].load_data()
+    def load_data(self, data_object=None):
+
+        if self.debug:
+            print("### This is PDSDataFromLabel.load_data()")
+
+        if data_object is not None:
+            self._update_load_data_flag(data_object)
+
+        for cur_data_obj in self.objects:
+            if self.load_data_flag[cur_data_obj] and not self.object[cur_data_obj].data_loaded:
+                self.object[cur_data_obj].load_data()
 
     def get_single_sweep(self, index):
         pass
@@ -343,7 +452,8 @@ class PDSDataTableColumnHeaderObject:
         else:
             self.n_items = 1
 
-        self.start_byte = int(self.label['START_BYTE'])
+        self.start_byte = int(self.label['START_BYTE']) - 1
+
         self.bytes = int(self.label['BYTES'])
 
         if 'ITEM_BYTES' in self.label.keys():
@@ -352,11 +462,11 @@ class PDSDataTableColumnHeaderObject:
             self.item_bytes = self.bytes
 
         self.struct_format = self._get_struct_format()
-        if self.debug:
+        if self.verbose:
             print(self.struct_format)
 
         self.np_data_type = self._get_np_data_type()
-        if self.debug:
+        if self.verbose:
             print(self.np_data_type)
 
     def _get_np_data_type(self):
@@ -366,10 +476,13 @@ class PDSDataTableColumnHeaderObject:
             'B': numpy.uint8,
             'h': numpy.int16,
             'H': numpy.uint16,
-            'l': numpy.int32,
-            'L': numpy.uint32,
+            'i': numpy.int32,
+            'I': numpy.uint32,
             'q': numpy.int64,
-            'Q': numpy.uint64
+            'Q': numpy.uint64,
+            'f': numpy.single,
+            'd': numpy.float_,
+            'c': numpy.str_
         }
         return struct_to_np_data_type[self.struct_format[-1]]
 
@@ -378,9 +491,14 @@ class PDSDataTableColumnHeaderObject:
         data_type = ''
         endianess = ''
 
-        if self.debug:
+        if self.verbose:
             print("Data type = {}".format(self.label['DATA_TYPE']))
             print("Item bytes= {}".format(self.item_bytes))
+
+        if self.label['DATA_TYPE'].startswith('MSB'):
+            endianess = '>'
+        elif self.label['DATA_TYPE'].startswith('LSB'):
+            endianess = '<'
 
         if self.label['DATA_TYPE'].endswith('INTEGER'):
             if int(self.item_bytes) == 1:
@@ -388,24 +506,28 @@ class PDSDataTableColumnHeaderObject:
             elif int(self.item_bytes) == 2:
                 data_type = 'h'
             elif int(self.item_bytes) == 4:
-                data_type = 'l'
+                data_type = 'i'
             elif int(self.item_bytes) == 8:
                 data_type = 'q'
             elif self.label['DATA_TYPE'].startswith('ASCII'):
-                data_type = 'l'
+                data_type = 'i'
         elif self.label['DATA_TYPE'].endswith('BIT_STRING'):
-            if int(self.item_bytes) == 1:
-                data_type = 'B'
+            data_type = 'B'
+            self.n_items = self.item_bytes
+        elif self.label['DATA_TYPE'].endswith('REAL') or self.label['DATA_TYPE'] == 'FLOAT':
+            data_type = 'f'
+            if self.label['DATA_TYPE'] == 'PC_REAL':
+                endianess = '<'
+            else:
+                endianess = '>'
+        elif self.label['DATA_TYPE'] == 'CHARACTER':
+            data_type = 'c'
+            self.n_items = self.item_bytes
         else:
             raise PDSError('Unknown (or not yet implemented) data type ({})'.format(self.label['DATA_TYPE']))
 
         if 'UNSIGNED' in self.label['DATA_TYPE']:
             data_type = data_type.upper()
-
-        if self.label['DATA_TYPE'].startswith('MSB'):
-            endianess = '>'
-        elif self.label['DATA_TYPE'].startswith('LSB'):
-            endianess = '<'
 
         return '{}{}{}'.format(endianess, self.n_items, data_type)
 
@@ -413,6 +535,10 @@ class PDSDataTableColumnHeaderObject:
 class PDSDataTableObject(dict):
 
     def __init__(self, product, parent, obj_label, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSDataTableObject.__init__()")
+
         dict.__init__(self)
         self.verbose = verbose
         self.debug = debug
@@ -429,6 +555,9 @@ class PDSDataTableObject(dict):
 
     def _create_data_structure(self):
 
+        if self.debug:
+            print("### This is PDSDataTableObject._create_data_structure()")
+
         # Setting up columns
         for cur_col in self.columns:
 
@@ -442,6 +571,9 @@ class PDSDataTableObject(dict):
 
     def load_data(self):
 
+        if self.debug:
+            print("### This is PDSDataTableObject.load_data()")
+
         # Loading data into columns
         if self.label['INTERCHANGE_FORMAT'] == 'ASCII':
             self._load_data_ascii()
@@ -453,6 +585,7 @@ class PDSDataTableObject(dict):
     def _load_data_ascii(self):
 
         if self.debug:
+            print("### This is PDSDataTableObject._load_data_ascii()")
             print("Starting ASCII read from {}".format(self.parent.file))
 
         with open(self.parent.file, 'r') as f:
@@ -463,18 +596,28 @@ class PDSDataTableObject(dict):
                     cur_byte_start = int(cur_col.start_byte) - 1
                     cur_byte_length = int(cur_col.bytes)
                     if cur_col.n_items == 1:
+                        if self.verbose:
+                            print("Loading... {}[{}] from bytes {}:{}".format(cur_name, ii, cur_byte_start,
+                                                                              cur_byte_start + cur_byte_length))
                         self[cur_name][ii] = line[cur_byte_start:cur_byte_start + cur_byte_length]
                     else:
                         for cur_item in range(cur_col.n_items):
+                            if self.verbose:
+                                print("Loading... {}[{}, {}] from bytes {}:{}".format(cur_name, ii, cur_item,
+                                                                                      cur_byte_start,
+                                                                                      cur_byte_start + cur_byte_length))
                             self[cur_name][ii, cur_item] = line[cur_byte_start:cur_byte_start + cur_byte_length]
                             cur_byte_start += cur_byte_length
 
     def _load_data_binary(self):
 
         if self.debug:
+            print("### This is PDSDataTableObject._load_data_binary()")
             print("Starting BINARY read from {}".format(self.parent.file))
 
         with open(self.parent.file, 'rb') as f:
+
+            f.seek(self.parent.data_offset_in_file)
 
             buf_length = int(self.label['ROW_BYTES'])
             if 'ROW_PREFIX_BYTES' in self.label.keys():
@@ -488,8 +631,13 @@ class PDSDataTableObject(dict):
 
                 for cur_col in self.columns:
                     cur_name = cur_col.name
-                    cur_byte_start = int(cur_col.start_byte) - 1
+                    cur_byte_start = int(cur_col.start_byte)
                     cur_byte_length = int(cur_col.bytes)
+
+                    if self.verbose:
+                        print("Loading... {}[{}] from bytes {}:{} of buffer({} bytes) "
+                              "with format: {}".format(cur_name, ii, cur_byte_start, cur_byte_start + cur_byte_length,
+                                                       buf_length, cur_col.struct_format))
 
                     line = struct.unpack(cur_col.struct_format, buf_data[cur_byte_start:cur_byte_start + cur_byte_length])
 
@@ -502,4 +650,10 @@ class PDSDataTableObject(dict):
 class PDSDataTimeSeriesObject(PDSDataTableObject):
 
     def __init__(self, product, parent, obj_label, verbose=True, debug=False):
+
+        if debug:
+            print("### This is PDSDataTimeSeriesObject.__init__()")
+
         PDSDataTableObject.__init__(self, product, parent, obj_label, verbose=verbose, debug=debug)
+        self.sampling = {"interval": self.label['SAMPLING_PARAMETER_INTERVAL'],
+                         'unit': self.label['SAMPLING_PARAMETER_UNIT']}
