@@ -7,7 +7,7 @@ Python module to work with PDS Data
 """
 
 import struct
-import datetime
+import dateutil.parser
 import os
 import numpy
 from maser.data.data import MaserDataFromFile, MaserError, MaserData
@@ -306,6 +306,8 @@ class PDSDataFromLabel(MaserDataFromFile):
         self._fix_object_label_entries()
 
         self.header = None
+        self.time = None
+        self.frequency = None
         self.object = {}
 
         self.load_data_flag = self._initialize_load_data_flag()
@@ -427,6 +429,12 @@ class PDSDataFromLabel(MaserDataFromFile):
             if self.load_data_flag[cur_data_obj] and not self.object[cur_data_obj].data_loaded:
                 self.object[cur_data_obj].load_data()
 
+    def _set_start_time(self):
+        self.start_time = dateutil.parser.parse(self.label['START_TIME'], ignoretz=True)
+
+    def _set_end_time(self):
+        self.end_time = dateutil.parser.parse(self.label['STOP_TIME'], ignoretz=True)
+
     def get_single_sweep(self, index):
         pass
 
@@ -435,6 +443,12 @@ class PDSDataFromLabel(MaserDataFromFile):
 
     def get_last_sweep(self):
         return self.get_single_sweep(-1)
+
+    def get_freq_axis(self):
+        pass
+
+    def get_time_axis(self):
+        pass
 
 
 class PDSDataTableColumnHeaderObject:
