@@ -8,6 +8,8 @@ Python module to work with PDS/PPI/Voyager/PRA Data
 
 import numpy
 import struct
+import datetime
+from maser.data.data import MaserDataSweep
 from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSDataTimeSeriesObject
 
 __author__ = "Baptiste Cecconi"
@@ -24,6 +26,61 @@ __project__ = "MASER/PADC PDS/PPI/Voyager"
 __all__ = ["PDSPPIVoyagerPRADataFromLabel"]
 
 default_root_data_path = "/Users/baptiste/Volumes/kronos-dio/voyager/data/pra/PDS_data/"
+
+
+class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
+
+    def __init__(self, parent, index, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep.__init__()")
+
+        MaserDataSweep.__init__(self, parent, index, verbose, debug)
+
+        cur_row, cur_swp = self.parent._split_index(index)
+        self.raw_sweep = self.parent.object['TABLE'].data['SWEEP{}'.format(cur_swp+1)][cur_row]
+        self.status = self.raw_sweep[0]
+        polar_indices = self._get_polar_indices()
+        self.data = {}
+        self.freq = {}
+        for item in ['R', 'L']:
+            self.data[item] = self.raw_sweep[1:][polar_indices[item]]
+            self.freq[item] = self.parent.frequency[polar_indices[item]]
+        self.freq['avg'] = (self.freq['R']+self.freq['L'])/2
+        self.attenuator = self._get_attenuator_value()
+
+    def get_datetime(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep.get_datetime()")
+
+        return self.parent.get_single_datetime(self.index)
+
+    def _get_polar_indices(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep._get_polar_indices()")
+
+        even_idx = numpy.linspace(0, 68, 35, dtype=numpy.int8)
+        odd_idx = numpy.linspace(1, 69, 35, dtype=numpy.int8)
+        if (self.status & 1536) // 512 in [0, 3]:
+            return {'R': even_idx, 'L': odd_idx}
+        else:
+            return {'L': even_idx, 'R': odd_idx}
+
+    def _get_attenuator_value(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep._get_attenuator_value()")
+
+        if self.status & 1:
+            return 15
+        elif (self.status//2) & 1:
+            return 30
+        elif (self.status//4) & 1:
+            return 45
+        else:
+            return 0
 
 
 class PDSPPIVoyagerPRADataObject(PDSDataObject):
@@ -93,8 +150,102 @@ class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
             print("### This is PDSPPIVoyagerPRADataFromLabel.__init__()")
 
         PDSDataFromLabel.__init__(self, file, load_data, PDSPPIVoyagerPRADataObject, verbose, debug)
+        self.frequency = self._get_freq_axis()
+        self.time = self._get_time_axis()
+        self._set_start_time()
+        self._set_end_time()
 
+    def _set_start_time(self):
+        if self.label['START_TIME'] == "N/A":
+            self.start_time = self.get_first_sweep().get_datetime()
+        else:
+            PDSDataFromLabel._set_start_time(self)
 
+    def _set_end_time(self):
+        if self.label['STOP_TIME'] == "N/A":
+            self.end_time = self.get_last_sweep().get_datetime()
+        else:
+            PDSDataFromLabel._set_end_time(self)
+
+    def _get_time_axis(self):
+        pass
+
+    def _get_freq_axis(self):
+        pass
+
+class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
+
+    def __init__(self, file, load_data=True, verbose=False, debug=False):
+
+        if debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.__init__()")
+
+        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, load_data, verbose, debug)
+
+    def _split_index(self, index):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._split_index()")
+
+        if index < 0:
+            index += self.object['TABLE'].data.n_rows * 8
+        return index // 8, index % 8
+
+    def get_single_datetime(self, index):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_single_datetime()")
+
+        return self.time[index]
+
+    def _get_freq_axis(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._get_freq_axis()")
+
+        return numpy.arange(1326, -18, -19.2)
+
+    def get_freq_axis(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_freq_axis()")
+
+        return self.frequency
+
+    def get_single_sweep(self, index):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_single_sweep()")
+
+        return PDSPPIVoyagerPRARDRLowBand6SecSweep(self, index)
+
+    def _get_time_axis(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._get_time_axis()")
+
+        if not self.object['TABLE'].data_loaded:
+            self.load_data('TABLE')
+
+        times = []
+        for item_date, item_second in zip(self.object['TABLE'].data['DATE'], self.object['TABLE'].data['SECOND']):
+            yy = (item_date // 10000) + 1900
+            if yy < 70:
+                yy += 100
+            mm = (item_date % 10000) // 100
+            dd = item_date % 100
+            sec = item_second + 3.9
+            for ii in range(8):
+                times.append(datetime.datetime(yy,mm, dd, 0, 0, 0) + datetime.timedelta(seconds=sec + 6 * ii))
+
+        return numpy.array(times)
+
+    def get_time_axis(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_time_axis()")
+
+        return self.time
 """
 
 class PDSPPIVoyagerPRADataFromInterval(MaserDataFromInterval):
