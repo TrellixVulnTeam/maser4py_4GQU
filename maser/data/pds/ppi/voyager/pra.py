@@ -197,6 +197,7 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel)
             print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.__init__()")
 
         PDSPPIVoyagerPRADataFromLabel.__init__(self, file, load_data, verbose, debug)
+        self.nsweep = int(self.label['TABLE']['ROWS']) * 8
 
     def _split_index(self, index):
 
