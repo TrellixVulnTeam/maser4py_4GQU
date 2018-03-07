@@ -48,6 +48,7 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
             self.freq[item] = self.parent.frequency[polar_indices[item]]
         self.freq['avg'] = (self.freq['R']+self.freq['L'])/2
         self.attenuator = self._get_attenuator_value()
+        self.type = self._get_sweep_type()
 
     def get_datetime(self):
 
@@ -56,6 +57,16 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
 
         return self.parent.get_single_datetime(self.index)
 
+    def _get_sweep_type(self):
+
+        if self.debug:
+            print("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep._get_sweep_type()")
+
+        if (self.status & 1536) // 512 in [0, 3]:
+            return 'R'
+        else:
+            return 'L'
+
     def _get_polar_indices(self):
 
         if self.debug:
@@ -63,7 +74,7 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
 
         even_idx = numpy.linspace(0, 68, 35, dtype=numpy.int8)
         odd_idx = numpy.linspace(1, 69, 35, dtype=numpy.int8)
-        if (self.status & 1536) // 512 in [0, 3]:
+        if self._get_sweep_type() == 'R':
             return {'R': even_idx, 'L': odd_idx}
         else:
             return {'L': even_idx, 'R': odd_idx}
@@ -151,7 +162,8 @@ class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
 
         PDSDataFromLabel.__init__(self, file, load_data, PDSPPIVoyagerPRADataObject, verbose, debug)
         self.frequency = self._get_freq_axis()
-        self.time = self._get_time_axis()
+        if load_data:
+            self.time = self._get_time_axis()
         self._set_start_time()
         self._set_end_time()
 
@@ -172,6 +184,10 @@ class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
 
     def _get_freq_axis(self):
         pass
+
+    def get_freq_axis(self, unit):
+        pass
+
 
 class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
 
@@ -205,12 +221,13 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel)
 
         return numpy.arange(1326, -18, -19.2)
 
-    def get_freq_axis(self):
+    def get_freq_axis(self, unit="kHz"):
 
         if self.debug:
             print("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_freq_axis()")
 
-        return self.frequency
+        unit_conversion = {'HZ': 1e-3, 'KHZ': 1, 'MHZ': 1e3}
+        return self.frequency/unit_conversion[unit.upper()]
 
     def get_single_sweep(self, index):
 

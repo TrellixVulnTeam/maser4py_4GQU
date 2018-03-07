@@ -444,11 +444,51 @@ class PDSDataFromLabel(MaserDataFromFile):
     def get_last_sweep(self):
         return self.get_single_sweep(-1)
 
-    def get_freq_axis(self):
+    def get_freq_axis(self, unit):
         pass
 
     def get_time_axis(self):
         pass
+
+    def get_mime_type(self):
+        if self.object[self.objects[0]].label['INTERCHANGE_FORMAT'] == 'ASCII':
+            return 'text/ascii'
+        else:
+            return MaserDataFromFile.get_mime_type(self)
+
+    def get_epncore_meta(self):
+        md = MaserDataFromFile.get_epncore_meta(self)
+        md['granule_uid'] = ":".join([self.label['DATA_SET_ID'], self.label['PRODUCT_ID']])
+        md['granule_gid'] = self.label['DATA_SET_ID']
+
+        md['instrument_host_name'] = self.label['INSTRUMENT_HOST_NAME']
+        md['instrument_name'] = self.label['INSTRUMENT_ID']
+
+        targets = {'name': set(), 'class': set(), 'region': set()}
+        if 'JUPITER' in self.label['TARGET_NAME']:
+            targets['name'].add('Jupiter')
+            targets['class'].add('planet')
+            targets['region'].add('magnetosphere')
+        if 'SATURN' in self.label['TARGET_NAME']:
+            targets['name'].add('Saturn')
+            targets['class'].add('planet')
+            targets['region'].add('magnetosphere')
+        if 'EARTH' in self.label['TARGET_NAME']:
+            targets['name'].add('Earth')
+            targets['class'].add('planet')
+            targets['region'].add('magnetosphere')
+        md['target_name'] = '#'.join(targets['name'])
+        md['target_class'] = '#'.join(targets['class'])
+        md['target_region'] = '#'.join(targets['region'])
+
+        md['dataproduct_type'] = 'ds'
+
+        md['spectral_range_min'] = self.get_freq_axis(unit='Hz')[0]
+        md['spectral_range_max'] = self.get_freq_axis(unit='Hz')[-1]
+
+        md['creation_date'] = dateutil.parser.parse(self.label['PRODUCT_CREATION_TIME'], ignoretz=True)
+
+        return md
 
 
 class PDSDataTableColumnHeaderObject:
