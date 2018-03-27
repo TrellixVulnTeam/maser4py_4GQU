@@ -16,7 +16,7 @@ __author__ = "Baptiste Cecconi"
 __date__ = "26-MAR-2018"
 __version__ = "0.12"
 
-__all__ = ["CDPPInterballAuroralPOLRADRSPData", "read_int_aur_polrad"]
+__all__ = ["CDPPInterballAuroralPOLRADRSPData", "load_int_aur_polrad_from_webservice", "read_int_aur_polrad"]
 
 
 class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):
@@ -192,8 +192,9 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         md["feature_name"] = "Auroral Kilometric Radiation#AKR"
         return md
 
-def load_int_aur_polrad_from_webservice(file_name, verbose=False, debug=False):
-    f = CDPPFileFromWebServiceSync(file_name, 'DA_TC_INT_AUR_POLRAD_RSP')
+
+def load_int_aur_polrad_from_webservice(file_name, user='cecconi', password=None, verbose=False, debug=False):
+    f = CDPPFileFromWebServiceSync(file_name, 'DA_TC_INT_AUR_POLRAD_RSP', user=user, password=password)
     return read_int_aur_polrad(f.file, verbose=verbose, debug=debug)
 
 

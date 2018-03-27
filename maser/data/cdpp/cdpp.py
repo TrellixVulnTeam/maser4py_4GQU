@@ -580,7 +580,7 @@ class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
                         'DA_TC_VIKING_V4_DATA': {'mission': '', 'instrument': ''},
                         'DA_TC_ISEE3_ICE_RADIO_3D_SOURCES': {'mission': '', 'instrument': ''}}
 
-    def __init__(self, file_name, dataset_name):
+    def __init__(self, file_name, dataset_name, user, password):
 
         CDPPFileFromWebService.__init__(self)
         self.dataset_name = dataset_name
@@ -592,7 +592,7 @@ class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
             raise MaserError("Dataset not staged, use Asynchronous method for downloading this file")
 
         c = CDPPWebService()
-        c.connect()
+        c.connect(user, password)
         all_file_info = c.get_files(dataset_name)
         if file_name in [item['name'] for item in all_file_info]:
             download_dir = self._get_download_directory()
