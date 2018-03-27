@@ -13,6 +13,7 @@ import dateutil.parser
 import time
 import json
 import os
+import getpass
 from maser.data.data import MaserDataFromFile, MaserError
 import socket
 hostname = socket.getfqdn()
@@ -288,9 +289,9 @@ class CDPPDataFromFile(MaserDataFromFile):
 
         return dt
 
-    def get_epncore(self):
+    def get_epncore_meta(self):
 
-        md = MaserDataFromFile.get_epncore(self)
+        md = MaserDataFromFile.get_epncore_meta(self)
 
         md["granule_uid"] = "{}_{}".format(self.name.lower(), self.file.lower())
         md["granule_gid"] = self.name.lower()
@@ -354,95 +355,260 @@ class CDPPDataFromFile(MaserDataFromFile):
         return md
 
 
-class CDPPDataFromWebService(CDPPDataFromFile):
+class CDPPWebService:
+    """
+    This module implements methods to connect to the CDPP webservices.
+    """
 
-    def __init__(self, user, password, start_date=None, stop_date=None,
-                 mission_name=None, instrument_name=None, dataset_name=None):
-        self.mission_name = mission_name
-        self.instrument_name = instrument_name
-        self.dataset_name = dataset_name
-        self.start_time = dateutil.parser.parse(start_date)
-        self.stop_time = datetime.datetime.strptime(stop_date)
-
-        self.auth = {"user": user, "password": password}
+    def __init__(self, cdpp_host="https://cdpp-archive.cnes.fr"):
+        """
+        Init method setting up attribute of the CDPPWebService object
+        :param cdpp_host: CDPP web service host to connect to (default = "https://cdpp-archive.cnes.fr")
+        """
+        self.cdpp_host = cdpp_host
+        self.auth_data = {}
         self.auth_token = {}
-        self.get_auth_token()
+        self.auth_token_expire = datetime.datetime.now()
 
-        if hostname == 'macbookbc.obspm.fr':
-            self.download_dir = "/Users/baptiste/Projets/CDPP/Archivage/_Downloads/{}/{}/{}"\
-                .format(mission_name, instrument_name, dataset_name)
-        elif hostname == 'voparis-maser-das.obspm.fr':
-            self.download_dir = "/cache/cdpp-data/{}/{}/{}".format(mission_name, instrument_name, dataset_name)
+    def connect(self, user="cecconi", password=None):
+        """
+        Connection to CDPP webservice, in order to get a valid authentication token.
+        :param user: valid CDPP web service user
+        :param password: corresponding password
+        """
+        if password is None:
+            password = getpass.getpass()
+        self.auth_data = {"user": user, "password": password}
+        self.auth_token = self._get_auth_token()
+        self.auth_token_expire = datetime.datetime.now() + datetime.timedelta(seconds=self.auth_token['expires_in'])
 
-        self.cdpp_host = "https://cdpp-archive.cnes.fr"
-        self.header = {}
-        self.data = {}
-        self.name = ""
+    def close(self):
+        """
+        Close current connection.
+        NB: The authentication token is still valid (up to 2 hrs after it was issued), but its values are deleted
+        from the object. The connection is thus impossible.
+        """
+        self.auth_data = {}
+        self.auth_token = {}
+        self.auth_token_expire = datetime.datetime.now()
 
-        CDPPDataFromFile.__init__(self, self.file, self.header, self.data, self.name)
+    def _check_reconnect(self):
+        """
+        Private method to check authentication token expire date.
+        If less than 5 seconds remaining, renew it.
+        """
+        if (datetime.datetime.now() - self.auth_token_expire).total_seconds() > -5:
+            print("Reconnecting")
+            self.connect(self.auth_data['user'], self.auth_data['password'])
 
-    def get_auth_token(self):
-
+    def _get_auth_token(self):
+        """
+        Private method to get authentication token from auth_data USER and PASSWORD elements.
+        """
         cdpp_auth_url = "{}/userauthenticate-rest/oauth/token".format(self.cdpp_host)
-        cdpp_auth_data = "client_id=ria&client_secret=123456789&grant_type=password&username={}&password={}"\
-            .format(self.auth['user'], self.auth['password']).encode('ascii')
+        cdpp_auth_data = "client_id=ria&client_secret=123456789&grant_type=password&username={}&password={}&scope=cdpp"\
+            .format(self.auth_data['user'], self.auth_data['password']).encode('ascii')
         cdpp_auth_header = {'Content-type': 'application/x-www-form-urlencoded'}
-        with requests.post(cdpp_auth_url, cdpp_auth_data, headers=cdpp_auth_header) as r:
-            self.auth_token = json.loads(r.text)
+        with requests.post(cdpp_auth_url, cdpp_auth_data, headers=cdpp_auth_header) as req:
+            return json.loads(req.text)
+
+    def _http_request_get(self, rest_url, headers=None):
+        """
+        Private wrapper method to build an http GET query (from requests.get module).
+        The methods checks the authentication token and adds the corresponding header.
+        :param rest_url: URL to query
+        :param headers: extra headers (other than authentication token)
+        :return: the results of the query, as a list.
+        """
+        if headers is None:
+            headers = dict()
+        headers["Authorization"] = "Bearer {}".format(self.auth_token["access_token"])
+        self._check_reconnect()
+        with requests.get(rest_url, headers=headers) as req:
+            res = json.loads(req.text)
+            return res['results']
+
+    def _http_request_post(self, rest_url, post_data, headers=None):
+        """
+        Private wrapper method to build an http POST query (from requests.post module).
+        The methods checks the authentication token and adds the corresponding header.
+        :param rest_url: URL to query
+        :param headers: extra headers (other than authentication token)
+        :return: the results of the query, as a list.
+        """
+        if headers is None:
+            headers = dict()
+        headers["Authorization"] = "Bearer {}".format(self.auth_token["access_token"])
+        self._check_reconnect()
+        with requests.post(rest_url, post_data, headers=headers) as req:
+            res = json.loads(req.text)
+            return res['results']
+
+    def get_missions(self):
+        """
+        Get the list of missions available through the CDPP web service.
+        :return: list of mission names
+        """
+        cdpp_missions_rest = "{}/cdpp-rest/cdpp/cdpp/missions".format(self.cdpp_host)
+        return self._http_request_get(cdpp_missions_rest)
 
     def get_instruments(self, mission_name):
-
-        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+        """
+        Get the list of instruments (and associated metadata) for a given mission.
+        :param mission_name: name of the mission
+        :return: list of instruments
+        """
         cdpp_instruments_rest = "{}/cdpp-rest/cdpp/cdpp/missions/{}/instruments".format(self.cdpp_host, mission_name)
-        with requests.get(cdpp_instruments_rest, headers=cdpp_header_auth) as r:
-            return json.loads(r.text)
+        return self._http_request_get(cdpp_instruments_rest)
 
     def get_datasets(self, mission_name, instrument_name):
-
-        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+        """
+        Get the list of datasets (and associated metadata) for a given instrument and mission
+        :param mission_name: Name of mission
+        :param instrument_name: Name of instrument
+        :return: list of datasets
+        """
         cdpp_datasets_rest = "{}/cdpp-rest/cdpp/cdpp/datasets?mission={}&instrument={}"\
             .format(self.cdpp_host, mission_name, instrument_name)
-        with requests.get(cdpp_datasets_rest, headers=cdpp_header_auth) as r:
-            return json.loads(r.text)
+        return self._http_request_get(cdpp_datasets_rest)
 
-    def get_files_async(self, start_date, stop_date, dataset_name):
+    def get_files(self, dataset_name):
+        """
+        Get the list of files (and associated metadata) for a given dataset
+        :param dataset_name: Name of dataset
+        :return: list of files including start and stop times.
+        """
+        cdpp_header = {"Content-Type": "application/json"}
+        cdpp_files_url = "{}/consultation-rest/cdpp/consultation/search/entities".format(self.cdpp_host)
+        cdpp_files_data = dict([("targetList", []), ("startPosition", 1), ("paginatedEntity", "OBJECT"),
+                                ("paginatedEntityType", "DATA"), ("visibility",  "IDENTIFIER"),
+                                ("objectVisibility", "STANDARD"), ("returnSum", True), ("collectionDeepSearch", False),
+                                ("startNode", {"entity": {"type":"DATASET", "id":dataset_name}}), ("sort", None),
+                                ("sortField", None)])
+        cdpp_files_result = self._http_request_post(cdpp_files_url, json.dumps(cdpp_files_data), headers=cdpp_header)
+        cdpp_files = []
+        for item in cdpp_files_result[0]['objectLst']:
+            cur_name = item['id']['id']
+            cur_start = datetime.datetime.fromtimestamp(item['startDateAsLong']//1000) \
+                        + datetime.timedelta(milliseconds=item['startDateAsLong']%1000)
+            cur_stop = datetime.datetime.fromtimestamp(item['stopDateAsLong']//1000) \
+                       + datetime.timedelta(milliseconds=item['stopDateAsLong']%1000)
+            cdpp_files.append({"name": cur_name, "start_time": cur_start, "stop_time": cur_stop})
+        return cdpp_files
 
-        cdpp_header_auth = {"Authorization": "Bearer {}".format(self.auth_token["access_token"])}
+    def download_files_async(self, start_date, stop_date, dataset_name, dir_out='.'):
+        """
+        Download files for a dataset and a time interval, using async method (using order and workspace)
+        :param start_date: Start time
+        :param stop_date: Stop time
+        :param dataset_name: Name of dataset
+        :param dir_out: Output directory (default is current directory)
+        """
         cdpp_command_async = "{}/cdpp-rest/cdpp/cdpp/datasets/{}/files?startdate={}&stopdate={}"\
             .format(self.cdpp_host, dataset_name, start_date.isoformat(), stop_date.isoformat())
-        with requests.get(cdpp_command_async, headers=cdpp_header_auth) as r:
-            rr = json.loads(r.text)
-            order_id = rr["results"]
-
+        order_id = self._http_request_get(cdpp_command_async)
         cdpp_order_status = "{}/command-rest/cdpp/command/orders/{}/status".format(self.cdpp_host, order_id)
         while True:
-            with requests.get(cdpp_order_status, headers=cdpp_header_auth) as r:
-                rr = json.loads(r.text)
-                order_status = rr["results"]
-                if order_status == "TERMINATED_OK":
-                    break
-                elif order_status.endswith("_CANCELLED") \
-                        or order_status.endswith("_FAILED") \
-                        or order_status == "DELETED":
-                    raise MaserError("CDPP REST interface: ORDER status = {}".format(order_status))
+            order_status = self._http_request_get(cdpp_order_status)
+            if order_status == "TERMINATED_OK":
+                break
+            elif order_status.endswith("_CANCELLED") or order_status.endswith("_FAILED") or order_status == "DELETED":
+                raise MaserError("CDPP REST interface: ORDER status = {}".format(order_status))
             time.sleep(0.5)
-
         cdpp_order_result = "{}/userworkspace-rest/cdpp/userworkspace/orders/{}/files"\
             .format(self.cdpp_host, order_id)
-        with requests.get(cdpp_order_result, headers=cdpp_header_auth):
-            rr = json.loads(r.text)
-            order_files = rr["results"]
-            for item in order_files:
-                cdpp_order_file = "{}/userworkspace-rest/download/cdpp/userworkspace/file/{}/{}/?access_token={}"\
-                    .format(self.cdpp_host, self.auth['user'], item, self.auth_token['access_token'])
-                order_basename = item.split['/'][-1]
-                with requests.get(cdpp_order_file) as r, open(os.path.join(self.download_dir, order_basename), 'wb') as f:
-                    f.write(r.content)
+        order_files = self._http_request_get(cdpp_order_result)
+        for item in order_files:
+            cdpp_order_file = "{}/userworkspace-rest/download/cdpp/userworkspace/file/{}/{}/?access_token={}"\
+                .format(self.cdpp_host, self.auth_data['user'], item, self.auth_token['access_token'])
+            order_basename = item.split['/'][-1]
+            self._check_reconnect()
+            with requests.get(cdpp_order_file) as r, open(os.path.join(dir_out, order_basename), 'wb') as f:
+                f.write(r.content)
+        return order_files
 
-    def download_file_sync(self):
-
-        file_name = self.file
+    def download_file_sync(self, file_name, dir_out):
+        """
+        Download a single file, using sync method (for staged dataset only)
+        :param file_name: Name of file
+        :param dir_out: Output directory (default is current directory)
+        """
+        self._check_reconnect()
         cdpp_command_url = "{}/command-rest/download/cdpp/command/data/object/{}?access_token={}"\
             .format(self.cdpp_host, file_name, self.auth_token["access_token"])
-        with requests.get(cdpp_command_url) as r, open(os.path.join(self.download_dir, file_name), 'wb') as f:
+        with requests.get(cdpp_command_url) as r, open(os.path.join(dir_out, file_name), 'wb') as f:
             f.write(r.content)
+
+
+class CDPPFileFromWebService:
+
+    def __init__(self):
+        self.dataset_name = ''
+        self.mission_name = ''
+        self.instrument_name = ''
+        pass
+
+    def _get_download_directory(self):
+        if hostname == 'macbookbc.obspm.fr':
+            download_rootdir = "/Users/baptiste/Projets/CDPP/Archivage/_Downloads"
+        elif hostname == 'voparis-keke.obspm.fr':
+            download_rootdir = "/usr/local/das2srv/data/CDPP"
+        elif hostname == 'voparis-maser-das.obspm.fr':
+            download_rootdir = "/cache/cdpp-data"
+        else:
+            download_rootdir = '.'
+
+        download_dir = os.path.join(download_rootdir, self.mission_name)
+        if not os.path.exists(download_dir):
+            os.mkdir(download_dir)
+
+        download_dir = os.path.join(download_dir, self.instrument_name)
+        if not os.path.exists(download_dir):
+            os.mkdir(download_dir)
+
+        download_dir = os.path.join(download_dir, self.dataset_name)
+        if not os.path.exists(download_dir):
+            os.mkdir(download_dir)
+
+        return download_dir
+
+
+class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
+
+    _staged_datasets = {'DA_TC_INT_AUR_POLRAD_RSP': {'mission': 'INTERBALL', 'instrument': 'POLRAD'},
+                        'DA_TC_DMT_N1_1134': {'mission': 'Demeter', 'instrument': ''},
+                        'DA_TC_VIKING_V4_DATA': {'mission': '', 'instrument': ''},
+                        'DA_TC_ISEE3_ICE_RADIO_3D_SOURCES': {'mission': '', 'instrument': ''}}
+
+    def __init__(self, file_name, dataset_name):
+
+        CDPPFileFromWebService.__init__(self)
+        self.dataset_name = dataset_name
+
+        if dataset_name in self._staged_datasets.keys():
+            self.mission_name = self._staged_datasets[self.dataset_name]['mission']
+            self.instrument_name = self._staged_datasets[self.dataset_name]['instrument']
+        else:
+            raise MaserError("Dataset not staged, use Asynchronous method for downloading this file")
+
+        c = CDPPWebService()
+        c.connect()
+        all_file_info = c.get_files(dataset_name)
+        if file_name in [item['name'] for item in all_file_info]:
+            download_dir = self._get_download_directory()
+            c.download_file_sync(file_name, download_dir)
+            self.file = os.path.join(download_dir, file_name)
+        else:
+            raise MaserError("File not existing for the selected dataset")
+
+
+class CDPPFileFromWebServiceAsync(CDPPFileFromWebService):
+
+    def __init__(self, start_date, stop_date, dataset_name):
+
+        CDPPFileFromWebService.__init__(self)
+        c = CDPPWebService()
+        c.connect()
+        download_dir = self._get_download_directory()
+        self.file = c.download_files_async(start_date, stop_date, dataset_name, download_dir)
+
