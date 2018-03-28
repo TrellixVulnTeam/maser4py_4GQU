@@ -180,7 +180,7 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         return self.meta[var_name]
 
     def get_frequency(self, cur_index):
-        return numpy.arange(self.header[cur_index]['STEPS'])*4.096 + 4.096
+        return numpy.flipud(numpy.arange(self.header[cur_index]['STEPS'])*4.096 + 4.096)
 
     def get_single_sweep(self, cur_index):
         return CDPPInterballAuroralPOLRADRSPSweep(self, cur_index)
