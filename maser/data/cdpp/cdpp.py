@@ -580,7 +580,7 @@ class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
                         'DA_TC_VIKING_V4_DATA': {'mission': '', 'instrument': ''},
                         'DA_TC_ISEE3_ICE_RADIO_3D_SOURCES': {'mission': '', 'instrument': ''}}
 
-    def __init__(self, file_name, dataset_name, user, password):
+    def __init__(self, file_name, dataset_name, user, password, check_file=True):
 
         CDPPFileFromWebService.__init__(self)
         self.dataset_name = dataset_name
@@ -593,13 +593,15 @@ class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
 
         c = CDPPWebService()
         c.connect(user, password)
-        all_file_info = c.get_files(dataset_name)
-        if file_name in [item['name'] for item in all_file_info]:
-            download_dir = self._get_download_directory()
-            c.download_file_sync(file_name, download_dir)
-            self.file = os.path.join(download_dir, file_name)
-        else:
-            raise MaserError("File not existing for the selected dataset")
+
+        if check_file:
+            all_file_info = c.get_files(dataset_name)
+            if file_name not in [item['name'] for item in all_file_info]:
+                raise MaserError("File not existing for the selected dataset")
+
+        download_dir = self._get_download_directory()
+        c.download_file_sync(file_name, download_dir)
+        self.file = os.path.join(download_dir, file_name)
 
 
 class CDPPFileFromWebServiceAsync(CDPPFileFromWebService):

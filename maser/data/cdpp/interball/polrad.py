@@ -122,9 +122,9 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
                 "EY": {"unit": "W/m^2/Hz", "description": "Flux Density on Antenna EY"},
                 "EZ": {"unit": "W/m^2/Hz", "description": "Flux Density on Antenna EZ"}}
 
-        CDPPDataFromFile.__init__(self, os.path.basename(file), header, data, name)
+        CDPPDataFromFile.__init__(self, file, header, data, name)
         self.meta = meta
-        self.time = self._get_datetime()
+        self.time = self.get_time_axis()
 
     def decode_session_name(self):
 
@@ -165,7 +165,7 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
 
         return result
 
-    def _get_datetime(self):
+    def get_time_axis(self):
         return self.get_datetime_ccsds_cds()
 
     def get_single_datetime(self, index):
@@ -193,8 +193,10 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         return md
 
 
-def load_int_aur_polrad_from_webservice(file_name, user='cecconi', password=None, verbose=False, debug=False):
-    f = CDPPFileFromWebServiceSync(file_name, 'DA_TC_INT_AUR_POLRAD_RSP', user=user, password=password)
+def load_int_aur_polrad_from_webservice(file_name, user='cecconi', password=None, check_file=True,
+                                        verbose=False, debug=False):
+    f = CDPPFileFromWebServiceSync(file_name, 'DA_TC_INT_AUR_POLRAD_RSP',
+                                   user=user, password=password, check_file=check_file)
     return read_int_aur_polrad(f.file, verbose=verbose, debug=debug)
 
 
