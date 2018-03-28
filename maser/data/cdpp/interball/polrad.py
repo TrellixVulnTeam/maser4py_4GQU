@@ -125,6 +125,7 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         CDPPDataFromFile.__init__(self, file, header, data, name)
         self.meta = meta
         self.time = self.get_time_axis()
+        self.nsweep = nsweep
 
     def decode_session_name(self):
 
