@@ -596,7 +596,7 @@ class CDPPWebService:
 
         if not os.path.exists(self.file['name']):
             if self.debug:
-                print(" - file is new: renaming lock file.")
+                print(" - file is new: renaming lock file to {}".format(self.file['name']))
             os.rename(self.file['lock'], self.file['name'])
         else:
             if filecmp.cmp(self.file['name'], self.file['lock'], shallow=False):
@@ -624,8 +624,12 @@ class CDPPWebService:
         self.file['name'] = os.path.join(dir_out, file_name)
         self._set_lock_file_write()
 
-        with requests.get(cdpp_command_url) as r, open(self.file['lock'], 'wb') as f:
-            f.write(r.content)
+        with requests.get(cdpp_command_url) as r:
+            if r.status_code == 200:
+                with open(self.file['lock'], 'wb') as f:
+                    f.write(r.content)
+            else:
+                raise MaserError("HTTP error {}: {}".format(r.status_code, r.content))
 
         self._unlock_file_write()
 
