@@ -16,7 +16,7 @@ __author__ = "Baptiste Cecconi"
 __date__ = "26-MAR-2018"
 __version__ = "0.12"
 
-__all__ = ["CDPPInterballAuroralPOLRADRSPData", "load_int_aur_polrad_from_webservice", "read_int_aur_polrad"]
+__all__ = ["load_int_aur_polrad_from_webservice", "read_int_aur_polrad"]
 
 
 class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):

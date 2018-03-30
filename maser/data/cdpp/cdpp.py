@@ -13,6 +13,7 @@ import dateutil.parser
 import time
 import json
 import os
+import filecmp
 import getpass
 from maser.data.data import MaserDataFromFile, MaserError
 import socket
@@ -369,6 +370,7 @@ class CDPPWebService:
         self.auth_data = {}
         self.auth_token = {}
         self.auth_token_expire = datetime.datetime.now()
+        self.file = {}
 
     def connect(self, user="cecconi", password=None):
         """
@@ -523,9 +525,29 @@ class CDPPWebService:
                 .format(self.cdpp_host, self.auth_data['user'], item, self.auth_token['access_token'])
             order_basename = item.split['/'][-1]
             self._check_reconnect()
-            with requests.get(cdpp_order_file) as r, open(os.path.join(dir_out, order_basename), 'wb') as f:
+            self.file['name'] = os.path.join(dir_out, order_basename)
+            self._set_lock_file_write()
+            with requests.get(cdpp_order_file) as r, open(self.file['lock'], 'wb') as f:
                 f.write(r.content)
+            self._unlock_file_write()
         return order_files
+
+    def _set_lock_file_write(self):
+        lock_file_id = 0
+        while True:
+            lock_file = "{}.lock-{:02d}".format(self.file['name'], lock_file_id)
+            if not os.path.exists(lock_file):
+                self.file['lock'] = lock_file
+            lock_file_id += 1
+
+    def _unlock_file_write(self):
+        if not os.path.exists(self.file['name']):
+            os.rename(self.file['lock'], self.file['name'])
+        else:
+            if filecmp.cmp(self.file['name'], self.file['lock'], shallow=False):
+                os.remove(self.file['lock'])
+            else:
+                raise MaserError('Downloaded file differs from previous one (check: {})'.format(self.file['name']))
 
     def download_file_sync(self, file_name, dir_out):
         """
