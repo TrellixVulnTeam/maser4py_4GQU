@@ -22,8 +22,9 @@ __all__ = ["load_int_aur_polrad_from_webservice", "read_int_aur_polrad"]
 class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):
 
     def __init__(self, parent, index, verbose=False, debug=False):
+
         if debug:
-            print("### This is CDPPInterballAuroralPOLRADRSPSweep.__init__()")
+            print("### This is {}.__init__()".format(__class__.__name__))
 
         MaserDataSweep.__init__(self, parent, index, verbose, debug)
 
@@ -34,7 +35,7 @@ class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):
     def get_datetime(self):
 
         if self.debug:
-            print("### This is CDPPInterballAuroralPOLRADRSPSweep.get_datetime()")
+            print("### This is {}.get_datetime()".format(__class__.__name__))
 
         return self.parent.get_single_datetime(self.index)
 
@@ -42,6 +43,10 @@ class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):
 class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
 
     def __init__(self, file, verbose=False, debug=False):
+
+        self.debug = debug
+        if self.debug:
+            print("This is {}.__init()".format(__class__.__name__))
 
         ccsds_fields = ["CCSDS_PREAMBLE", "CCSDS_JULIAN_DAY_B1", "CCSDS_JULIAN_DAY_B2", "CCSDS_JULIAN_DAY_B3",
                         "CCSDS_MILLISECONDS_OF_DAY"]
@@ -126,8 +131,13 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         self.meta = meta
         self.time = self.get_time_axis()
         self.nsweep = nsweep
+        self.debug = debug
+        self.verbose = verbose
 
     def decode_session_name(self):
+
+        if self.debug:
+            print("This is {}.decode_session_name()".format(__class__.__name__))
 
         result = list()
 
@@ -167,9 +177,17 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         return result
 
     def get_time_axis(self):
+
+        if self.debug:
+            print("This is {}.get_time_axis()".format(__class__.__name__))
+
         return self.get_datetime_ccsds_cds()
 
     def get_single_datetime(self, index):
+
+        if self.debug:
+            print("This is {}.get_single_datetime()".format(__class__.__name__))
+
         return self.time[index]
 
     def getvar_meta(self, var_name):
@@ -177,15 +195,31 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
         Method to retrieve the variable metadata
         :return: 
         """
+
+        if self.debug:
+            print("This is {}.getvar_meta()".format(__class__.__name__))
+
         return self.meta[var_name]
 
     def get_frequency(self, cur_index):
+
+        if self.debug:
+            print("This is {}.get_frequency()".format(__class__.__name__))
+
         return numpy.flipud(numpy.arange(self.header[cur_index]['STEPS'])*4.096 + 4.096)
 
     def get_single_sweep(self, cur_index):
-        return CDPPInterballAuroralPOLRADRSPSweep(self, cur_index)
+
+        if self.debug:
+            print("This is {}.get_single_sweep()".format(__class__.__name__))
+
+        return CDPPInterballAuroralPOLRADRSPSweep(self, cur_index, debug=self.debug, verbose=self.verbose)
 
     def get_epncore_meta(self):
+
+        if self.debug:
+            print("This is {}.get_epncore_meta()".format(__class__.__name__))
+
         md = CDPPDataFromFile.get_epncore_meta(self)
         md["target_class"] = "planet"
         md["target_name"] = "Earth"
@@ -196,10 +230,18 @@ class CDPPInterballAuroralPOLRADRSPData(CDPPDataFromFile):
 
 def load_int_aur_polrad_from_webservice(file_name, user='cecconi', password=None, check_file=True,
                                         verbose=False, debug=False):
+
+    if debug:
+        print("This is load_int_aur_polrad_from_webservice()")
+
     f = CDPPFileFromWebServiceSync(file_name, 'DA_TC_INT_AUR_POLRAD_RSP',
-                                   user=user, password=password, check_file=check_file)
+                                   user=user, password=password, check_file=check_file, debug=debug, verbose=verbose)
     return read_int_aur_polrad(f.file, verbose=verbose, debug=debug)
 
 
 def read_int_aur_polrad(file_path, verbose=False, debug=False):
+
+    if debug:
+        print("This is read_int_aur_polrad()")
+
     return CDPPInterballAuroralPOLRADRSPData(file_path, verbose=verbose, debug=debug)
