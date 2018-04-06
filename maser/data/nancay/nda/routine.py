@@ -14,6 +14,9 @@ from maser.data.nancay.nda.nda import NDAError
 from maser.data.nancay.nda.nda import NDADataFromFile
 import maser.utils.cdf.cdf
 import dateutil.parser
+import sunpy.sun
+#get_sun_B0([time])	Return the B0 angle for the Sun at a specified time, which is the heliographic latitude of the Sun-disk center as seen from Earth.
+#get_sun_L0([time])	Return the L0 angle for the Sun at a specified time, which is the Carrington longitude of the Sun-disk center as seen from Earth.
 
 __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC-USN, Observatoire de Paris"
@@ -44,14 +47,22 @@ def detect_format(file):
     return file_info
 
 
-def load_nda_routine_from_file(file):
+def load_nda_routine_from_file(file, debug=False):
 
+    if debug:
+        print("This is load_nda_routine_from_file()")
     file_info = detect_format(file)
     if file_info['format'] == 'RT1':
-        o = NDARoutineDataRT1(file)
+        if debug:
+            print(' - RT1 format detected.')
+        o = NDARoutineDataRT1(file, debug=debug)
     elif file_info['format'] == 'CDF':
-        o = NDARoutineDataCDF(file)
+        if debug:
+            print(' - CDF format detected.')
+        o = NDARoutineDataCDF(file, debug=debug)
     else:
+        if debug:
+            print(' - can''t detect format.')
         o = None
 
     return o
@@ -120,6 +131,7 @@ class NDARoutineData(NDADataFromFile):
 
     def get_time_axis(self):
         pass
+
 
 class NDARoutineDataRT1(NDARoutineData):
 
@@ -323,6 +335,7 @@ class NDARoutineDataRT1(NDARoutineData):
     def get_time_axis(self):
         return [self.get_single_sweep(item, False).get_datetime() for item in range(len(self))]
 
+
 class NDARoutineDataCDF(NDARoutineData):
 
     def __init__(self, file, debug=False):
@@ -515,15 +528,16 @@ class NDARoutineSweepCDF(MaserDataSweep):
         self.data['polar'] = ['LL', 'RR']
 
     def load_data(self, polar=None):
-        f = self.parent.file_handle
-        if polar is not None:
-            self.data['data'][polar] = f[polar][self.index]
-        else:
-            self.data['data']['LL'] = f['LL'][self.index]
-            self.data['data']['RR'] = f['RR'][self.index]
-        self.data['RR_SWEEP_TIME_OFFSET'] = f['RR_SWEEP_TIME_OFFSET'][self.index]
-        self.data['status'] = f['STATUS'][self.index]
-        self.data['loaded'] = True
+        if not self.data['loaded']:
+            f = self.parent.file_handle
+            if polar is not None:
+                self.data['data'][polar] = f[polar][self.index]
+            else:
+                self.data['data']['LL'] = f['LL'][self.index]
+                self.data['data']['RR'] = f['RR'][self.index]
+            self.data['RR_SWEEP_TIME_OFFSET'] = float(f['RR_SWEEP_TIME_OFFSET'][self.index])
+            self.data['status'] = f['STATUS'][self.index]
+            self.data['loaded'] = True
 
     def get_data(self):
         if not self.data['loaded']:
