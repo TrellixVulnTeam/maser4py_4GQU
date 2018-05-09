@@ -618,7 +618,7 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
 
         return data
 
-    def _read_radiojove_spx_sweep(self, read_size=_packet_size):
+    def _read_radiojove_spx_sweep(self, offset=None, read_size=_packet_size):
         """
         Reads raw data from SPS or SPD file
         :param read_size: number of sweep to read
@@ -627,6 +627,9 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         if self.verbose:
             print("### [read_radiojove_spx_sweep]")
             print("loading packet of {} sweep(s), with format `{}`.".format(read_size, self.file_info['data_format']))
+
+        if offset is not None:
+            self.file_info['lun'].seek(offset, 0)
 
         raw = []
         for i in range(read_size):
@@ -669,8 +672,9 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         nfeed = self.header['nfeed']
         rec_0 = self.file_info['record_data_offset']
 
-        data_raw = np.array(self._read_radiojove_spx_sweep(index_input))[0, rec_0:rec_0 + nfreq * nfeed]\
-            .reshape(nfreq, nfeed)
+        data_raw = np.array(
+            self._read_radiojove_spx_sweep(offset=self.sweep_ptr_in_file[index_input], read_size=1)
+        )[0, rec_0:rec_0 + nfreq * nfeed].reshape(nfreq, nfeed)
         data = dict()
         for i in range(nfeed):
             data[var_list[i]] = data_raw[:, i]
