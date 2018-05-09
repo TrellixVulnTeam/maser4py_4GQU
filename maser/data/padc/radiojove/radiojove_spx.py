@@ -49,6 +49,8 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         self._open_radiojove_spx()
         self.start_time = self.header['start_time']
         self.end_time = self.header['stop_time']
+        self.sweep_ptr_in_file = [self.file_info['prim_hdr_length'] + self.header['note_length']
+                                  + ii * self.file_info['bytes_per_step'] for ii in range(self.header['nsweep'])]
         self.data = []
 
         if self.debug:
@@ -57,9 +59,15 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         self.dataset_name = "_".join(["radiojove", self.header['obsty_id'].lower(), self.header['instr_id'].lower(),
                                       self.header['level'].lower(), self.header['product_type'].lower()])
 
+        self.data_loaded = False
         if self.load_data:
             self.data = self._extract_radiojove_spx_data()
+            self.data_loaded = True
 
+        if self.data_loaded:
+            self._close_radiojove_spx()
+
+    def close(self):
         self._close_radiojove_spx()
 
     def _extract_radiojove_spx_header(self):
@@ -362,6 +370,20 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
             self.header['antenna_type'] = self.header['notes']['ANTENNATYPE']
             self.header['color_file'] = self.header['notes']['COLORFILE']
             self.header['free_text'] = self.header['notes']['free_text']
+        elif self.header['obsname'] == 'LGM Radio Alachua':
+            self.header['obsty_id'] = 'LGM'
+            self.header['instr_id'] = 'FSX-1S'
+            self.header['gain0'] = self.header['notes']['COLORGAIN'][0]
+            self.header['gain1'] = self.header['notes']['COLORGAIN'][1]
+            self.header['offset0'] = self.header['notes']['COLOROFFSET'][0]
+            self.header['offset1'] = self.header['notes']['COLOROFFSET'][1]
+            self.header['banner0'] = self.header['notes']['BANNER'][0].\
+                replace('<DATE>', self.header['start_time'].date().isoformat())
+            self.header['banner1'] = self.header['notes']['BANNER'][1].\
+                replace('<DATE>', self.header['start_time'].date().isoformat())
+            self.header['antenna_type'] = self.header['notes']['ANTENNATYPE']
+            self.header['color_file'] = self.header['notes']['COLORFILE']
+            self.header['free_text'] = self.header['notes']['free_text']
         else:
             self.header['obsty_id'] = 'ABCDE'
             self.header['instr_id'] = 'XXX'
@@ -427,6 +449,10 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
 
                     self.header['polar0'] = 'S'
                     self.header['polar1'] = 'S'
+
+                if self.header['polar0'] == self.header['polar1']:
+                    self.header['polar0'] = '{}0'.format(self.header['polar0'])
+                    self.header['polar1'] = '{}1'.format(self.header['polar1'])
 
                 self.header['feeds'].append(feed_tmp[self.header['polar0']])
                 self.header['feeds'].append(feed_tmp[self.header['polar1']])
@@ -546,6 +572,9 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
 
         self.file_info['lun'].close()
 
+    def __len__(self):
+        return self.header['nsweep']
+
     def _extract_radiojove_spx_data(self) -> dict:
         """
         :return:
@@ -635,7 +664,17 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         return self.get_single_sweep(-1)
 
     def get_single_sweep(self, index_input=0):
-        return self._read_radiojove_spx_sweep(index_input)
+        var_list = [item['FIELDNAM'] for item in self.header['feeds']]
+        nfreq = self.header['nfreq']  # len(freq)
+        nfeed = self.header['nfeed']
+        rec_0 = self.file_info['record_data_offset']
+
+        data_raw = np.array(self._read_radiojove_spx_sweep(index_input))[0, rec_0:rec_0 + nfreq * nfeed]\
+            .reshape(nfreq, nfeed)
+        data = dict()
+        for i in range(nfeed):
+            data[var_list[i]] = data_raw[:, i]
+        return data
 
     def build_edr_data(self, start_time=None, end_time=None) -> dict:
         """
