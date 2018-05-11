@@ -92,7 +92,7 @@ class MaserData(object):
         if start_time is None:
             start_time = self.start_time
         if end_time is None:
-            end_time = self.start_time
+            end_time = self.end_time
 
         var = {'header': {}, 'time': [], 'data': {}}
         return var, start_time, end_time
@@ -214,12 +214,21 @@ class MaserDataFromFile(MaserData):
     def __ne__(self, other):
         return self.get_file_name() != other.get_file_name()
 
+    def __len__(self):
+        pass
+
     def get_epncore_meta(self):
         md = MaserData.get_epncore_meta(self)
         md['filename'] = self.get_file_name()
         md['access_format'] = self.get_mime_type()
         md['access_estsize'] = self.get_file_size()/1024
         return md
+
+    def get_single_sweep(self, index=0, **kwargs):
+        pass
+
+    def sweeps(self, **kwargs):
+        return (self.get_single_sweep(cur_sweep_id, **kwargs) for cur_sweep_id in range(len(self)))
 
 
 class MaserDataFromFileCDF(MaserDataFromFile):
