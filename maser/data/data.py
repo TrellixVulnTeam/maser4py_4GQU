@@ -2,7 +2,7 @@
 # -*- coding: latin-1 -*-
 
 """
-Python module to create a generic Class for Data and data files handling
+Python module to create generic Classes for Data and data files handling
 """
 
 import os
@@ -20,7 +20,7 @@ __project__ = "MASER"
 
 __all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord", "MaserDataSweep"]
 
-### defining local library paths
+# defining local library paths
 
 # Path to bin directory of IGPP/PDS/CDF library: http://release.igpp.ucla.edu/pds/cdf/
 _pdscdf_bin = '/Users/baptiste/Projets/VOParis/igpp-git/pds-cdf-1.0.11/bin/'
@@ -37,22 +37,24 @@ _local_path = os.path.dirname(__file__)
 
 class MaserError(Exception):
     """
-    Placeholder class for handling errors
+    Placeholder class for handling exceptions in the maser.data packages and modules.
     """
     pass
 
 
 class MaserData(object):
     """
-    Basic MaserData class with minimal methods
+    Basic MaserData class with minimal methods.
+
+    :ivar start_time: a datetime.datetime object (or None is not applicable) providing the start time of the data.
+    :ivar end_time: a datetime.datetime object (or None is not applicable) providing the end time of the data.
+    :ivar dataset_name: a string (or None is not applicable) providing the dataset name.
+
+    :param verbose: (bool) set to False to remove verbose output (default to True)
+    :param debug: (bool) set to True to have debug output (default to False)
     """
 
     def __init__(self, verbose=True, debug=False):
-        """
-        Method to instantiate generic MaserData object.
-        :param verbose: (bool) set to False to remove verbose output (default to True)
-        :param debug: (bool) set to True to have debug output (default to False)
-        """
         self.verbose = verbose
         self.debug = debug
         self.start_time = None
@@ -75,20 +77,42 @@ class MaserData(object):
         return lib_path
 
     def get_epncore_meta(self):
+        """
+        Method to get EPNcore metadata from the MaserData object instance. This method is extended in classes inheriting
+        from MaserData.
+        :return md: a dict with time_min, time_max and granule_gid (from dataset_name attribute) keys.
+        """
         md = dict()
         md['time_min'] = self.start_time
         md['time_max'] = self.end_time
+        md['granule_gid'] = self.dataset_name
         return md
 
     def get_istp_meta(self):
+        """
+        Method to get ISTP metadata from the MaserData object instance. This method is extended in classes inheriting
+        from MaserData.
+        :return: a dict with a projet key set to "MASER"
+        """
         md = dict()
         md['project'] = ['MASER']
         return md
 
     def get_pds4_meta(self):
+        """
+        Placeholder class to get PDS4 metadata from the MaserData object instance. This method is extended in classes
+        inheriting from MaserData.
+        :return:
+        """
         pass
 
     def build_edr_data(self, start_time=None, end_time=None):
+        """
+        TBD
+        :param start_time:
+        :param end_time:
+        :return:
+        """
         if start_time is None:
             start_time = self.start_time
         if end_time is None:
@@ -101,16 +125,21 @@ class MaserData(object):
 class MaserDataFromInterval(MaserData):
     """
     MaserDataFromInterval class for MaserData objects built from an interval and a dataset
+
+    :ivar start_time: a datetime.datetime object (or None is not applicable) providing the start time of the data.
+    :ivar end_time: a datetime.datetime object (or None is not applicable) providing the end time of the data.
+    :ivar dataset_name: a string (or None is not applicable) providing the dataset name.
+
+    :param start_time: start date-time (either ISO formatted or datetime.datetime object)
+    :param end_time: end date-time (either ISO formatted or datetime.datetime object)
+    :param dataset: (string) dataset name
+    :param verbose: (bool) set to False to remove verbose output (default to True)
+    :param debug: (bool) set to True to have debug output (default to False)
     """
 
     def __init__(self, start_time, end_time, dataset='', verbose=True, debug=False):
         """
         Method to instantiate a MaserDataFromInterval object.
-        :param start_time: start date-time (either ISO formatted or datetime.datetime object)
-        :param end_time: end date-time (either ISO formatted or datetime.datetime object)
-        :param dataset: (string) dataset name
-        :param verbose: (bool) set to False to remove verbose output (default to True)
-        :param debug: (bool) set to True to have debug output (default to False)
         """
         MaserData.__init__(self, verbose, debug)
         self.start_time = self.parse_time(start_time)
@@ -122,7 +151,7 @@ class MaserDataFromInterval(MaserData):
         """
         Method to parse an input time
         :param input_time: date-time (either ISO formatted or datetime.datetime object)
-        :returns: datetime.datetime object
+        :returns dt: datetime.datetime object
         """
 
         if isinstance(input_time, datetime.datetime):
@@ -139,16 +168,17 @@ class MaserDataFromInterval(MaserData):
 
 class MaserDataFromFile(MaserData):
     """
-    MaserDataFromFile class for MaserData objects built from a file
+    MaserDataFromFile class for MaserData objects built from a file.
+
+    :ivar file: Absolute path of current file
+    :ivar format: File format (default in 'bin')
+
+    :param file: input file (including path to file)
+    :param verbose: (bool) set to False to remove verbose output (default to True)
+    :param debug: (bool) set to True to have debug output (default to False)
     """
 
     def __init__(self, file, verbose=False, debug=False):
-        """
-        Method instantiate a MaserData object from a file
-        :param file: input file (including path to file)
-        :param verbose: (bool) set to False to remove verbose output (default to True)
-        :param debug: (bool) set to True to have debug output (default to False)
-        """
         MaserData.__init__(self, verbose, debug)
         self.file = os.path.abspath(file)
         self.format = 'bin'
@@ -218,28 +248,52 @@ class MaserDataFromFile(MaserData):
         pass
 
     def get_epncore_meta(self):
+        """
+        Method to get EPNcore metadata dictionary
+        Adds file_name, access_format and access_estsize to the MaserData.get_epn_core method
+        :return:
+        """
         md = MaserData.get_epncore_meta(self)
-        md['filename'] = self.get_file_name()
+        md['file_name'] = self.get_file_name()
         md['access_format'] = self.get_mime_type()
         md['access_estsize'] = self.get_file_size()/1024
         return md
 
     def get_single_sweep(self, index=0, **kwargs):
+        """
+        Placeholder method to retrieve a single data sweep.
+        :param index: index number of the sweep to be retreived. Default=0
+        :param kwargs: Any arguments that shall be passed to the method.
+        :return:
+        """
         pass
 
     def sweeps(self, **kwargs):
+        """
+        Placeholder method to retrieve a list of all sweeps for the data object.
+        :param kwargs:  Any arguments that shall be passed to the method.
+        :returns: a list of all sweep objects in the data object.
+        """
         return (self.get_single_sweep(cur_sweep_id, **kwargs) for cur_sweep_id in range(len(self)))
 
 
 class MaserDataFromFileCDF(MaserDataFromFile):
+    """
+    This class inherits from the MaserDataFromFile class, and is used for CDF file types.
 
+    :ivar format: this attribute is set to 'cdf'
+    """
     def __init__(self, file, verbose=True, debug=False):
 
         MaserDataFromFile.__init__(self, file, verbose, debug)
         self.format = 'CDF'
 
     def validate_pds(self):
-
+        """
+        This method calls the PDS-CDF validator provided by NASA/PDS/PPI (UCLA/IGPP group).
+        The validate script is available at: http://release.igpp.ucla.edu/pds/cdf/
+        :return:
+        """
         if self.verbose:
             print("### [Check PDS-CDF compliance]")
             verb_arg = '-v'
@@ -254,7 +308,10 @@ class MaserDataFromFileCDF(MaserDataFromFile):
         os.system(shell_command)
 
     def fix_cdf(self):
-
+        """
+        This method is used to fix CDF internal structure if needed. It is running the cdfconvert command of the CDF-C
+        library from NASA/GSFC.
+        """
         if self.verbose:
             print("### [Fix CDF --- cdfconvert to self]")
 
@@ -267,10 +324,15 @@ class MaserDataFromFileCDF(MaserDataFromFile):
         os.system(shell_command)
 
     def get_mime_type(self):
+        """
+        The method returns the MIME type of the data object (here: 'application/x-cdf').
+        """
         return 'application/x-cdf'
 
     def build_pds4_label(self):
-
+        """
+        This method builds a CDF PDS4 label for the current CDF file.
+        """
         java_process_list = ['java', '-jar', "{}jar/igpp.docgen.jar".format(_docgen_bin),
                              '-t {}'.format(os.path.join(_local_path, 'templates')),
                              'cdf:{}'.format(self.file), 'maser_cdf_pds4_label_template.vm']
@@ -278,17 +340,29 @@ class MaserDataFromFileCDF(MaserDataFromFile):
 
 
 class MaserDataFromFileFITS(MaserDataFromFile):
+    """
+    This class inherits from the MaserDataFromFile class, and is used for CDF file types.
+
+    :ivar format: this attribute is set to 'fits'
+    """
 
     def __init__(self, file, verbose=True, debug=False):
-
         MaserDataFromFile.__init__(file, verbose, debug)
         self.format = 'FITS'
 
     def get_mime_type(self):
+        """
+        The method returns the MIME type of the data object (here: 'application/fits').
+        """
         return 'application/fits'
 
 
 class MaserDataFromFileText(MaserDataFromFile):
+    """
+    This class inherits from the MaserDataFromFile class, and is used for CDF file types.
+
+    :ivar format: this attribute is set to 'TXT'
+    """
 
     def __init__(self, file, verbose=True, debug=False):
 
@@ -296,10 +370,18 @@ class MaserDataFromFileText(MaserDataFromFile):
         self.format = 'TXT'
 
     def get_mime_type(self):
+        """
+        The method returns the MIME type of the data object (here: 'text/plain').
+        """
         return 'text/plain'
 
 
 class MaserDataFromFileCSV(MaserDataFromFile):
+    """
+    This class inherits from the MaserDataFromFile class, and is used for CDF file types.
+
+    :ivar format: this attribute is set to 'CSV'
+    """
 
     def __init__(self, file, verbose=True, debug=False):
 
@@ -307,10 +389,19 @@ class MaserDataFromFileCSV(MaserDataFromFile):
         self.format = 'CSV'
 
     def get_mime_type(self):
+        """
+        The method returns the MIME type of the data object (here: 'text/csv').
+        """
         return 'text/csv'
 
 
 class MaserDataRecord(object):
+    """
+    Placeholder class for MaserData records.
+
+    :ivar parent: parent MaserData object
+    :ivar data: dict with data record content.
+    """
 
     def __init__(self, parent, raw_data):
         self.parent = parent
@@ -335,10 +426,21 @@ class MaserDataRecord(object):
             raise MaserError("Key {} doesn't exist".format(key))
 
     def get_datetime(self) -> datetime.datetime:
+        """
+        Method to retrieve the epoch of the record
+        :return: datetime.datetime object
+        """
         pass
 
 
 class MaserDataSweep(MaserData):
+    """
+    Placeholder class for MaserData sweeps.
+
+    :ivar parent: parent MaserData object
+    :ivar data: dict with sweep data content.
+    :ivar header: dict with sweep header content
+    """
 
     def __init__(self, parent, index, verbose=False, debug=False):
         MaserData.__init__(self)
