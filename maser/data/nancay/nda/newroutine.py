@@ -30,6 +30,12 @@ class NDANewRoutineError(NDAError):
 class NDANewRoutineData(NDADataFromFile):
 
     def __init__(self, file, debug=False, filter_frequency=True):
+        """
+        Initialization method for class NDANewRoutineData
+        :param file: file name
+        :param debug: flag to active debug output (default: False)
+        :param filter_frequency: flag to activate the output of selected frequencies only (default: True)
+        """
         header = {}
         data = []
         name = "SRN/NDA NewRoutine Dataset"

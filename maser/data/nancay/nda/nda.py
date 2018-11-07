@@ -36,7 +36,6 @@ class NDADataFromFile(MaserDataFromFile):
     def __len__(self):
         return len(self.data)
 
-
 class NDADataECube(MaserDataSweep):
     def __init__(self, parent_obj, index_input, load_data=True, filter_frequency=False):
         MaserDataSweep.__init__(self, parent_obj, index_input)
@@ -109,3 +108,4 @@ class NDADataECube(MaserDataSweep):
                 raise NDAError('[{}:{}] Wrong eCube Magic Word (Corr[{}]) [0x{:08X}]'
                                .format(self.parent.get_file_name(), self.index,
                                        i, self.data['corr'][i]['magic']))
+
