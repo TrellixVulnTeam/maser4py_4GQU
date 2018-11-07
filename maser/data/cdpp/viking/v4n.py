@@ -88,7 +88,7 @@ class VikingV4nData(CDPPDataFromFile):
         return meta
 
     def get_epncore(self):
-        md = CDPPDataFromFile.get_epncore(self)
+        md = CDPPDataFromFile.get_epncore_meta(self)
         md["time_min"] = self["DATETIME_UTC"][0]
         md["time_max"] = self["DATETIME_UTC"][-1]
         md["time_scale"] = "UTC"

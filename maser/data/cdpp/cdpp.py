@@ -25,7 +25,8 @@ __date__ = "23-JAN-2018"
 __version__ = "0.12"
 __project__ = "MASER/CDPP"
 
-__all__ = ["CDPPDataFromFile", "CDPPDataFromWebService"]
+__all__ = ["CDPPDataFromFile", "CDPPWebService", "CDPPFileFromWebService", "CDPPFileFromWebServiceSync",
+           "CDPPFileFromWebServiceAsync"]
 
 
 class CCSDSDate:
@@ -511,16 +512,16 @@ class CDPPWebService:
         cdpp_files_data = dict([("targetList", []), ("startPosition", 1), ("paginatedEntity", "OBJECT"),
                                 ("paginatedEntityType", "DATA"), ("visibility",  "IDENTIFIER"),
                                 ("objectVisibility", "STANDARD"), ("returnSum", True), ("collectionDeepSearch", False),
-                                ("startNode", {"entity": {"type":"DATASET", "id":dataset_name}}), ("sort", None),
+                                ("startNode", {"entity": {"type": "DATASET", "id": dataset_name}}), ("sort", None),
                                 ("sortField", None)])
         cdpp_files_result = self._http_request_post(cdpp_files_url, json.dumps(cdpp_files_data), headers=cdpp_header)
         cdpp_files = []
         for item in cdpp_files_result[0]['objectLst']:
             cur_name = item['id']['id']
-            cur_start = datetime.datetime.fromtimestamp(item['startDateAsLong']//1000) \
-                        + datetime.timedelta(milliseconds=item['startDateAsLong']%1000)
-            cur_stop = datetime.datetime.fromtimestamp(item['stopDateAsLong']//1000) \
-                       + datetime.timedelta(milliseconds=item['stopDateAsLong']%1000)
+            cur_start = datetime.datetime.fromtimestamp(item['startDateAsLong']//1000) + \
+                        datetime.timedelta(milliseconds=item['startDateAsLong']%1000)
+            cur_stop = datetime.datetime.fromtimestamp(item['stopDateAsLong']//1000) + \
+                       datetime.timedelta(milliseconds=item['stopDateAsLong']%1000)
             cdpp_files.append({"name": cur_name, "start_time": cur_start, "stop_time": cur_stop})
         return cdpp_files
 
@@ -596,12 +597,12 @@ class CDPPWebService:
 
         if not os.path.exists(self.file['name']):
             if self.debug:
-                print(" - file is new: renaming lock file to {}".format(self.file['name']))
+                print(" - file is new: renaming lock_file to {}".format(self.file['name']))
             os.rename(self.file['lock'], self.file['name'])
         else:
             if filecmp.cmp(self.file['name'], self.file['lock'], shallow=False):
                 if self.debug:
-                    print(" - identical file exists: removing lock file.")
+                    print(" - identical file exists ({}): removing lock_file.".format(self.file['name']))
                 os.remove(self.file['lock'])
             else:
                 if self.debug:
@@ -629,7 +630,7 @@ class CDPPWebService:
                 with open(self.file['lock'], 'wb') as f:
                     f.write(r.content)
             else:
-                raise MaserError("HTTP error {}: {}".format(r.status_code, r.content))
+                raise MaserError("HTTP error {}: {}".format(r.status_code, r.content.decode('ascii')))
 
         self._unlock_file_write()
 
@@ -651,7 +652,7 @@ class CDPPFileFromWebService:
         if self.debug:
             print("This is {}._get_download_directory()".format(__class__.__name__))
 
-        if hostname == 'macbookbc.obspm.fr':
+        if hostname in ['macbookbc.obspm.fr', 'macbookbc.local']:
             download_rootdir = "/Users/baptiste/Projets/CDPP/Archivage/_Downloads"
         elif hostname == 'voparis-keke.obspm.fr':
             download_rootdir = "/usr/local/das2srv/data/CDPP"
@@ -706,17 +707,18 @@ class CDPPFileFromWebServiceSync(CDPPFileFromWebService):
         download_dir = self._get_download_directory()
         c.download_file_sync(file_name, download_dir)
         self.file = os.path.join(download_dir, file_name)
+        c.close()
 
 
 class CDPPFileFromWebServiceAsync(CDPPFileFromWebService):
 
-    def __init__(self, start_date, stop_date, dataset_name, debug=False, verbose=False):
+    def __init__(self, start_date, stop_date, dataset_name, user, password, debug=False, verbose=False):
         if debug:
             print("This is {}.__init__()".format(__class__.__name__))
 
         CDPPFileFromWebService.__init__(self, debug=debug, verbose=verbose)
-        c = CDPPWebService()
-        c.connect()
+        c = CDPPWebService(debug=debug, verbose=verbose)
+        c.connect(user, password)
         download_dir = self._get_download_directory()
         self.file = c.download_files_async(start_date, stop_date, dataset_name, download_dir)
-
+        c.close()
