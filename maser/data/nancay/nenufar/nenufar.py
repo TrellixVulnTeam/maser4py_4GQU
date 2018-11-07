@@ -12,7 +12,7 @@ XST (Cross Statistic): Cross-correlation between mini-arrays.
 
 import os
 from astropy.io import fits
-from maser.data.data import MaserDataFromFileFITS
+from maser.data.data import MaserDataFromFileFITS, MaserData, MaserError, MaserDataSweep
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."
@@ -21,6 +21,14 @@ __version__ = "0.01"
 __project__ = "MASER/SRN/NenuFAR"
 
 __all__ = ["NenuFARBSTDataFromFile", "NenuFARSSTDataFromFile", "NenuFARDataECube"]
+
+
+class NenuFARBSTSweep(MaserDataSweep):
+    pass
+
+
+class NenuFARBSTBeam(MaserData):
+    pass
 
 
 class NenuFARDataFromFile(MaserDataFromFileFITS):
