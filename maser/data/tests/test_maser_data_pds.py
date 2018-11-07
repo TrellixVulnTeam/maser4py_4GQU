@@ -2,140 +2,188 @@ import unittest
 import datetime
 import dateutil.parser
 import os
-import maser.data.tests
-import maser.data.data
+from maser.data.tests import *
+from maser.data import MaserDataFromFile
 import numpy
-import maser.data.pds.ppi.voyager.pra as pra
-import maser.data.pds.ppi.cassini.rpws.wbr as wbr
-import maser.data.pds.ppi.cassini.rpws.hfr as hfr
-import maser.data.pds.pds as pds
+from maser.data.pds.ppi.voyager.pra import PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
+    PDSPPIVoyagerPRADataFromLabel, PDSPPIVoyagerPRADataObject, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject
+from maser.data.pds.ppi.cassini.rpws.wbr import PDSPPICassiniRPWSWBRFullResDataFromLabel, \
+    PDSPPICassiniRPWSWBRDataObject, PDSPPICassiniRPWSWBRRowPrefixTable
+from maser.data.pds.ppi.cassini.rpws.hfr import PDSPPICassiniRPWSHFRLowRateFullDataFromLabel, \
+    PDSPPICassiniRPWSHFRDataObject
+from maser.data.pds import PDSDataFromLabel, PDSLabelDict, PDSDataTableObject, PDSDataTimeSeriesObject
 
 #maser.data.tests.load_test_data("pds")
 
-root_data_path = os.path.join('data', 'pds')
-file = os.path.join(root_data_path, 'VG1-J-PRA-3-RDR-LOWBAND-6SEC-V1', 'PRA_I.LBL')
-ov1 = pra.PDSPPIVoyagerPRADataFromLabel(file)
+root_data_path = get_data_directory() / 'pds'
+file = root_data_path / 'VG1-J-PRA-3-RDR-LOWBAND-6SEC-V1' / 'PRA_I.LBL'
+ov1 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'VG1-J-PRA-4-SUMM-BROWSE-48SEC-V1', 'T790306.LBL')
-ov2 = pra.PDSPPIVoyagerPRADataFromLabel(file)
+file = root_data_path / 'VG1-J-PRA-4-SUMM-BROWSE-48SEC-V1' / 'T790306.LBL'
+ov2 = PDSPPIVoyagerPRADataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'VG1-S-PRA-3-RDR-LOWBAND-6SEC-V1', 'PRA.LBL')
-ov3 = pra.PDSPPIVoyagerPRADataFromLabel(file)
+file = root_data_path / 'VG1-S-PRA-3-RDR-LOWBAND-6SEC-V1' / 'PRA.LBL'
+ov3 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'VG2-N-PRA-2-RDR-HIGHRATE-60MS-V1', 'C1065111.LBL')
-ov4 = pra.PDSPPIVoyagerPRADataFromLabel(file)
+file = root_data_path / 'VG2-N-PRA-2-RDR-HIGHRATE-60MS-V1' / 'C1065111.LBL'
+ov4 = PDSPPIVoyagerPRADataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'VG2-N-PRA-3-RDR-LOWBAND-6SEC-V1', 'VG2_NEP_PRA_6SEC.LBL')
-ov5 = pra.PDSPPIVoyagerPRADataFromLabel(file)
+file = root_data_path / 'VG2-N-PRA-3-RDR-LOWBAND-6SEC-V1' / 'VG2_NEP_PRA_6SEC.LBL'
+ov5 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'CO-V_E_J_S_SS-RPWS-2-REFDR-WBRFULL-V1', 'T2000366_09_8025KHZ4_WBRFR.LBL')
-oc1 = wbr.PDSPPICassiniRPWSWBRFullResDataFromLabel(file)
+file = root_data_path / 'CO-V_E_J_S_SS-RPWS-2-REFDR-WBRFULL-V1' / 'T2000366_09_8025KHZ4_WBRFR.LBL'
+oc1 = PDSPPICassiniRPWSWBRFullResDataFromLabel(str(file), load_data=False)
 
-file = os.path.join(root_data_path, 'CO-V_E_J_S_SS-RPWS-3-RDR-LRFULL-V1', 'T2000366_HFR0.LBL')
-oc2 = hfr.PDSPPICassiniRPWSHFRLowRateFullDataFromLabel(file)
+file = root_data_path / 'CO-V_E_J_S_SS-RPWS-3-RDR-LRFULL-V1' / 'T2000366_HFR0.LBL'
+oc2 = PDSPPICassiniRPWSHFRLowRateFullDataFromLabel(str(file), load_data=False)
 
 
-class PDSDataFromLabel(unittest.TestCase):
+class PDSDataFromLabelClassTest(unittest.TestCase):
     """Test case for PDSDataFromFile class"""
 
     def test_class(self):
-        self.assertIsInstance(ov1, pra.PDSPPIVoyagerPRADataFromLabel)
-        self.assertIsInstance(ov1, pds.PDSDataFromLabel)
-        self.assertIsInstance(ov1, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(ov1, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
+        self.assertIsInstance(ov1, PDSPPIVoyagerPRADataFromLabel)
+        self.assertIsInstance(ov1, PDSDataFromLabel)
+        self.assertIsInstance(ov1, MaserDataFromFile)
 
-        self.assertIsInstance(ov2, pra.PDSPPIVoyagerPRADataFromLabel)
-        self.assertIsInstance(ov2, pds.PDSDataFromLabel)
-        self.assertIsInstance(ov2, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(ov2, PDSPPIVoyagerPRADataFromLabel)
+        self.assertIsInstance(ov2, PDSDataFromLabel)
+        self.assertIsInstance(ov2, MaserDataFromFile)
 
-        self.assertIsInstance(ov3, pra.PDSPPIVoyagerPRADataFromLabel)
-        self.assertIsInstance(ov3, pds.PDSDataFromLabel)
-        self.assertIsInstance(ov3, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(ov3, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
+        self.assertIsInstance(ov3, PDSPPIVoyagerPRADataFromLabel)
+        self.assertIsInstance(ov3, PDSDataFromLabel)
+        self.assertIsInstance(ov3, MaserDataFromFile)
 
-        self.assertIsInstance(ov4, pra.PDSPPIVoyagerPRADataFromLabel)
-        self.assertIsInstance(ov4, pds.PDSDataFromLabel)
-        self.assertIsInstance(ov4, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(ov4, PDSPPIVoyagerPRADataFromLabel)
+        self.assertIsInstance(ov4, PDSDataFromLabel)
+        self.assertIsInstance(ov4, MaserDataFromFile)
 
-        self.assertIsInstance(ov5, pra.PDSPPIVoyagerPRADataFromLabel)
-        self.assertIsInstance(ov5, pds.PDSDataFromLabel)
-        self.assertIsInstance(ov5, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(ov5, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
+        self.assertIsInstance(ov5, PDSPPIVoyagerPRADataFromLabel)
+        self.assertIsInstance(ov5, PDSDataFromLabel)
+        self.assertIsInstance(ov5, MaserDataFromFile)
 
-        self.assertIsInstance(oc1, wbr.PDSPPICassiniRPWSWBRFullResDataFromLabel)
-        self.assertIsInstance(oc1, pds.PDSDataFromLabel)
-        self.assertIsInstance(oc1, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(oc1, PDSPPICassiniRPWSWBRFullResDataFromLabel)
+        self.assertIsInstance(oc1, PDSDataFromLabel)
+        self.assertIsInstance(oc1, MaserDataFromFile)
 
-        self.assertIsInstance(oc2, hfr.PDSPPICassiniRPWSHFRLowRateFullDataFromLabel)
-        self.assertIsInstance(oc2, pds.PDSDataFromLabel)
-        self.assertIsInstance(oc2, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(oc2, PDSPPICassiniRPWSHFRLowRateFullDataFromLabel)
+        self.assertIsInstance(oc2, PDSDataFromLabel)
+        self.assertIsInstance(oc2, MaserDataFromFile)
 
     def test_label(self):
         self.assertEqual(ov1.file, ov1.file.replace('.TAB', '.LBL'))
-        self.assertIsInstance(ov1.label, maser.data.pds.pds.PDSLabelDict)
+        self.assertIsInstance(ov1.label, PDSLabelDict)
 
         self.assertEqual(oc1.file, oc1.file.replace('.TAB', '.LBL'))
-        self.assertIsInstance(oc1.label, maser.data.pds.pds.PDSLabelDict)
+        self.assertIsInstance(oc1.label, PDSLabelDict)
 
         self.assertEqual(oc2.file, oc2.file.replace('.TAB', '.LBL'))
-        self.assertIsInstance(oc2.label, maser.data.pds.pds.PDSLabelDict)
+        self.assertIsInstance(oc2.label, PDSLabelDict)
 
     def test_object(self):
         self.assertIsInstance(ov1.object, dict)
         self.assertIn('TABLE', ov1.objects)
         self.assertIn('TABLE', ov1.object.keys())
-        self.assertIsInstance(ov1.object['TABLE'], pra.PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov1.object['TABLE'], PDSPPIVoyagerPRADataObject)
 
         self.assertIsInstance(ov2.object, dict)
         self.assertIn('TIME_SERIES', ov2.objects)
         self.assertIn('TIME_SERIES', ov2.object.keys())
-        self.assertIsInstance(ov2.object['TIME_SERIES'], pra.PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov2.object['TIME_SERIES'], PDSPPIVoyagerPRADataObject)
 
         self.assertIsInstance(ov3.object, dict)
         self.assertIn('TABLE', ov3.objects)
         self.assertIn('TABLE', ov3.object.keys())
-        self.assertIsInstance(ov3.object['TABLE'], pra.PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov3.object['TABLE'], PDSPPIVoyagerPRADataObject)
 
         self.assertIsInstance(ov4.object, dict)
         self.assertSetEqual({'HEADER_TABLE', 'F3_F4_TIME_SERIES', 'F1_F2_TIME_SERIES'}, set(ov4.objects))
         self.assertSetEqual({'HEADER_TABLE', 'F3_F4_TIME_SERIES', 'F1_F2_TIME_SERIES'}, set(ov4.object.keys()))
-        self.assertIsInstance(ov4.object['HEADER_TABLE'], pra.PDSPPIVoyagerPRADataObject)
-        self.assertIsInstance(ov4.object['HEADER_TABLE'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'], pra.PDSPPIVoyagerPRADataObject)
-        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, pds.PDSDataTimeSeriesObject)
-        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, pra.PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
-        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'], pra.PDSPPIVoyagerPRADataObject)
-        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, pds.PDSDataTimeSeriesObject)
-        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, pra.PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['HEADER_TABLE'], PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov4.object['HEADER_TABLE'].data, PDSDataTableObject)
+        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'], PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSDataTableObject)
+        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'], PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSDataTableObject)
+        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
 
         self.assertIsInstance(ov5.object, dict)
         self.assertIn('TABLE', ov5.objects)
         self.assertIn('TABLE', ov5.object.keys())
-        self.assertIsInstance(ov5.object['TABLE'], pra.PDSPPIVoyagerPRADataObject)
+        self.assertIsInstance(ov5.object['TABLE'], PDSPPIVoyagerPRADataObject)
 
         self.assertIsInstance(oc1.object, dict)
         self.assertSetEqual({'TIME_SERIES', 'WBR_ROW_PREFIX_TABLE'}, set(oc1.objects))
         self.assertSetEqual({'TIME_SERIES', 'WBR_ROW_PREFIX_TABLE'}, set(oc1.object.keys()))
-        self.assertIsInstance(oc1.object['TIME_SERIES'], wbr.PDSPPICassiniRPWSWBRDataObject)
-        self.assertIsInstance(oc1.object['TIME_SERIES'].data, pds.PDSDataTimeSeriesObject)
-        self.assertIsInstance(oc1.object['WBR_ROW_PREFIX_TABLE'], wbr.PDSPPICassiniRPWSWBRDataObject)
-        self.assertIsInstance(oc1.object['WBR_ROW_PREFIX_TABLE'].data, wbr.PDSPPICassiniRPWSWBRRowPrefixTable)
+        self.assertIsInstance(oc1.object['TIME_SERIES'], PDSPPICassiniRPWSWBRDataObject)
+        self.assertIsInstance(oc1.object['TIME_SERIES'].data, PDSDataTimeSeriesObject)
+        self.assertIsInstance(oc1.object['WBR_ROW_PREFIX_TABLE'], PDSPPICassiniRPWSWBRDataObject)
+        self.assertIsInstance(oc1.object['WBR_ROW_PREFIX_TABLE'].data, PDSPPICassiniRPWSWBRRowPrefixTable)
 
         self.assertIsInstance(oc2.object, dict)
         self.assertSetEqual({'LRFULL_TABLE', 'FREQUENCY_TABLE', 'SPECTRAL_DENSITY_TABLE', 'TIME_TABLE'},
                             set(oc2.objects))
         self.assertSetEqual({'LRFULL_TABLE', 'FREQUENCY_TABLE', 'SPECTRAL_DENSITY_TABLE', 'TIME_TABLE'},
                             set(oc2.object.keys()))
-        self.assertIsInstance(oc2.object['LRFULL_TABLE'], hfr.PDSPPICassiniRPWSHFRDataObject)
-        self.assertIsInstance(oc2.object['LRFULL_TABLE'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(oc2.object['FREQUENCY_TABLE'], hfr.PDSPPICassiniRPWSHFRDataObject)
-        self.assertIsInstance(oc2.object['FREQUENCY_TABLE'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(oc2.object['TIME_TABLE'], hfr.PDSPPICassiniRPWSHFRDataObject)
-        self.assertIsInstance(oc2.object['TIME_TABLE'].data, pds.PDSDataTableObject)
-        self.assertIsInstance(oc2.object['SPECTRAL_DENSITY_TABLE'], hfr.PDSPPICassiniRPWSHFRDataObject)
-        self.assertIsInstance(oc2.object['SPECTRAL_DENSITY_TABLE'].data, pds.PDSDataTableObject)
+        self.assertIsInstance(oc2.object['LRFULL_TABLE'], PDSPPICassiniRPWSHFRDataObject)
+        self.assertIsInstance(oc2.object['LRFULL_TABLE'].data, PDSDataTableObject)
+        self.assertIsInstance(oc2.object['FREQUENCY_TABLE'], PDSPPICassiniRPWSHFRDataObject)
+        self.assertIsInstance(oc2.object['FREQUENCY_TABLE'].data, PDSDataTableObject)
+        self.assertIsInstance(oc2.object['TIME_TABLE'], PDSPPICassiniRPWSHFRDataObject)
+        self.assertIsInstance(oc2.object['TIME_TABLE'].data, PDSDataTableObject)
+        self.assertIsInstance(oc2.object['SPECTRAL_DENSITY_TABLE'], PDSPPICassiniRPWSHFRDataObject)
+        self.assertIsInstance(oc2.object['SPECTRAL_DENSITY_TABLE'].data, PDSDataTableObject)
+
+    def test_load_data(self):
+
+        # OV1 : pra.PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel
+
+        self.assertEqual(ov1.load_data_flag['TABLE'], False)
+        self.assertEqual(ov1.object['TABLE'].data_loaded, False)
+        ov1.load_data('TABLE')
+        self.assertEqual(ov1.load_data_flag['TABLE'], True)
+        self.assertEqual(ov1.object['TABLE'].data_loaded, True)
+
+        # OV2 : pra.PDSPPIVoyagerPRADataFromLabel
+
+        self.assertEqual(ov2.load_data_flag['TIME_SERIES'], False)
+        self.assertEqual(ov2.object['TIME_SERIES'].data_loaded, False)
+        ov2.load_data('TIME_SERIES')
+        self.assertEqual(ov2.load_data_flag['TIME_SERIES'], True)
+        self.assertEqual(ov2.object['TIME_SERIES'].data_loaded, True)
+
+        # OV3 : pra.PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel
+
+        self.assertEqual(ov3.load_data_flag['TABLE'], False)
+        self.assertEqual(ov3.object['TABLE'].data_loaded, False)
+        ov3.load_data()
+        self.assertEqual(ov3.load_data_flag['TABLE'], False)
+        self.assertEqual(ov3.object['TABLE'].data_loaded, False)
+        ov3.load_data(True)
+        self.assertEqual(ov3.load_data_flag['TABLE'], True)
+        self.assertEqual(ov3.object['TABLE'].data_loaded, True)
+
+        # OV4 : pra.PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel
+
+        self.assertEqual(ov4.load_data_flag['HEADER_TABLE'], False)
+        self.assertEqual(ov4.object['HEADER_TABLE'].data_loaded, False)
+        ov4.load_data('HEADER_TABLE')
+        self.assertEqual(ov4.load_data_flag['HEADER_TABLE'], True)
+        self.assertEqual(ov4.object['HEADER_TABLE'].data_loaded, True)
+        self.assertEqual(ov4.load_data_flag['F1_F2_TIME_SERIES'], False)
+        self.assertEqual(ov4.object['F1_F2_TIME_SERIES'].data_loaded, False)
+        ov4.load_data(['HEADER_TABLE', 'F1_F2_TIME_SERIES'])
+        self.assertEqual(ov4.load_data_flag['F1_F2_TIME_SERIES'], True)
+        self.assertEqual(ov4.object['F1_F2_TIME_SERIES'].data_loaded, True)
 
 
-class PDSPPICassiniRPWSHFRLowRateFullDataFromLabel(unittest.TestCase):
+class PDSPPICassiniRPWSHFRLowRateFullDataFromLabelClassTest(unittest.TestCase):
     """Test case for PDS PPI Cassini RPWS HFR Low Rate Full"""
 
     def test_frequency(self):
@@ -147,6 +195,7 @@ class PDSPPICassiniRPWSHFRLowRateFullDataFromLabel(unittest.TestCase):
         self.assertListEqual(list(oc2.get_freq_axis(unit='Hz')), list(freq_table.data['FREQUENCY'][0]))
 
     def test_times(self):
+        oc2.load_data(True)
         self.assertEqual(oc2.object['TIME_TABLE'].data['SCET_DAY'][0], 15705)
         self.assertEqual(oc2.object['FREQUENCY_TABLE'].data['SCET_DAY'][0], 15705)
         self.assertEqual(oc2.object['SPECTRAL_DENSITY_TABLE'].data['SCET_DAY'][0], 15705)
@@ -165,6 +214,27 @@ class PDSPPICassiniRPWSHFRLowRateFullDataFromLabel(unittest.TestCase):
         self.assertEqual(oc2.get_time_axis()[-1], datetime.datetime(2000, 12, 31, 8, 59, 56, 56000))
         self.assertEqual(oc2.start_time, datetime.datetime(2000, 12, 31, 0, 0))
         self.assertEqual(oc2.end_time, datetime.datetime(2001, 1, 1, 0, 0))
+
+
+class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabelClassTest(unittest.TestCase):
+    """Test case for PDS PPI Voyager PRA RDR"""
+
+    def test_frequency(self):
+        freq_table1 = ov1.get_freq_axis()
+        self.assertListEqual(list(freq_table1), list(ov1.frequency))
+        freq_table3 = ov3.get_freq_axis()
+        self.assertListEqual(list(freq_table3), list(ov3.frequency))
+        freq_table5 = ov5.get_freq_axis()
+        self.assertListEqual(list(freq_table5), list(ov5.frequency))
+        self.assertEqual(freq_table1[0], 1326)
+
+    def test_times(self):
+        self.assertEqual(ov1.start_time, datetime.datetime(1979, 1, 6, 0, 0, 34))
+        self.assertEqual(ov1.end_time, datetime.datetime(2001, 1, 1, 0, 0))
+        time_table1 = ov1.get_time_axis()
+        self.assertEqual(len(time_table1), 284552)
+        self.assertEqual(time_table1[0], datetime.datetime(2000, 12, 31, 0, 0))
+        self.assertEqual(time_table1[100], datetime.datetime(2000, 12, 31, 0, 0))
 
 # class PDSPPIVoyagerPRAJupiterDataTest(unittest.TestCase):
 #

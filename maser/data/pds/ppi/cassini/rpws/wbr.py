@@ -6,8 +6,9 @@ Python module to work with PDS-PPI/Cassini/RPWS data
 @author: B.Cecconi(LESIA)
 """
 
+from maser.data.pds.ppi.cassini.rpws import iso_time_to_datetime
 from maser.data.padc.lesia.cassini.rpws import agc_dB, a123
-from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSError, PDSDataTimeSeriesObject
+from maser.data.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSError, PDSDataTimeSeriesObject
 import numpy
 import datetime
 
@@ -222,6 +223,14 @@ class PDSPPICassiniRPWSWBRFullResDataFromLabel(PDSDataFromLabel):
             print("### This is PDSPPICassiniRPWSWBRFullResDataFromLabel.__init__()")
 
         PDSDataFromLabel.__init__(self, file, load_data, PDSPPICassiniRPWSWBRDataObject, verbose, debug)
+        self._set_start_time()
+        self._set_end_time()
+
+    def _set_start_time(self):
+        self.start_time = iso_time_to_datetime(self.label['START_TIME'])
+
+    def _set_end_time(self):
+        self.end_time = iso_time_to_datetime(self.label['STOP_TIME'])
 
     def get_start_sample_datetime(self):
         date0 = datetime.datetime(1958, 1, 1)

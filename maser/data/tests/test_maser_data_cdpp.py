@@ -1,12 +1,12 @@
 import unittest
 import datetime
-import maser.data.tests
-import maser.data.cdpp.cdpp
-import maser.data.cdpp.wind.waves
-import maser.data.cdpp.isee3.sbh
-import maser.data.cdpp.viking.v4n
+from maser.data.tests import load_test_data, get_data_directory
+from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.wind.waves import WindWavesData, read_wind_waves
+from maser.data.cdpp.isee3.sbh import ISEE3SBHData, read_isee3_sbh_3d_radio_source
+from maser.data.cdpp.viking.v4n import VikingV4nData, read_viking
 
-maser.data.tests.load_test_data("cdpp")
+load_test_data("cdpp")
 
 
 class CDPPDataTest(unittest.TestCase):
@@ -17,73 +17,73 @@ class CDPPDataTest(unittest.TestCase):
         print("### Testing CDPPData class")
         header = {}
         data = {}
-        test = maser.data.cdpp.cdpp.CDPPDataFromFile("", header, data, "")
-        self.assertIsInstance(test, maser.data.cdpp.cdpp.CDPPDataFromFile)
+        test = CDPPDataFromFile("", header, data, "")
+        self.assertIsInstance(test, CDPPDataFromFile)
 
 
 def load_wind_waves_nn():
-    file_path = "data/cdpp/wind/WI_WA_TNR_L3_NN_19941114_V02.DAT"
-    return maser.data.cdpp.wind.waves.read_wind_waves(file_path)
+    file_path = get_data_directory() / "cdpp" / "wind" / "WI_WA_TNR_L3_NN_19941114_V02.DAT"
+    return read_wind_waves(str(file_path))
 
 
 def load_wind_waves_bqt():
-    file_path = "data/cdpp/wind/WI_WA_TNR_L3_BQT_19941114_1MN.DAT"
-    return maser.data.cdpp.wind.waves.read_wind_waves(file_path)
+    file_path = get_data_directory() / "cdpp" / "wind" / "WI_WA_TNR_L3_BQT_19941114_1MN.DAT"
+    return read_wind_waves(str(file_path))
 
 
 def load_wind_waves_radio_60s():
-    file_path = "data/cdpp/wind/WIN_TNR_60S_19941114.B3E"
-    return maser.data.cdpp.wind.waves.read_wind_waves(file_path)
+    file_path = get_data_directory() / "cdpp" / "wind" / "WIN_TNR_60S_19941114.B3E"
+    return read_wind_waves(str(file_path))
 
 
 def load_isee3_sbh_3d_radio_source():
-    file_path = "data/cdpp/isee3/SBH_ISEE3_19780820"
-    return maser.data.cdpp.isee3.sbh.read_isee3_sbh_3d_radio_source(file_path)
+    file_path = get_data_directory() / "cdpp" / "isee3" / "SBH_ISEE3_19780820"
+    return read_isee3_sbh_3d_radio_source(str(file_path))
 
 
 def load_viking_v4():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path)
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path))
 
 
 def load_viking_v4_v1():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4_V1")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4_V1")
 
 
 def load_viking_v4_v2():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4_V2")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4_V2")
 
 
 def load_viking_v4l_fbl():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4L_FBL")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4L_FBL")
 
 
 def load_viking_v4l_ni():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4L_Ni")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4L_Ni")
 
 
 def load_viking_v4l_dft():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4L_DFT")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4L_DFT")
 
 
 def load_viking_v4l_wf():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4L_WF")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4L_WF")
 
 
 def load_viking_v4h_sfa():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4H_SFA")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4H_SFA")
 
 
 def load_viking_v4h_fb():
-    file_path = "data/cdpp/viking/V4N_0101_003"
-    return maser.data.cdpp.viking.v4n.read_viking(file_path, "VIKING_V4H_FB")
+    file_path = get_data_directory() / "cdpp" / "viking" / "V4N_0101_003"
+    return read_viking(str(file_path), "VIKING_V4H_FB")
 
 
 class WindWavesDataTest(unittest.TestCase):
@@ -96,8 +96,8 @@ class WindWavesDataTest(unittest.TestCase):
         data = {}
         meta = {}
         name = "TEST"
-        test = maser.data.cdpp.wind.waves.WindWavesData("", header, data, meta, name)
-        self.assertIsInstance(test, maser.data.cdpp.cdpp.CDPPDataFromFile)
+        test = WindWavesData("", header, data, meta, name)
+        self.assertIsInstance(test, CDPPDataFromFile)
 
     def test_wind_waves_nn_name(self):
         print("### Testing WindWavesData name variable on NN dataset")
@@ -186,8 +186,8 @@ class ISEE3SBHDataTest(unittest.TestCase):
         meta = {}
         orbit = {}
         name = "TEST"
-        test = maser.data.cdpp.isee3.sbh.ISEE3SBHData("", header, data, meta, name, orbit)
-        self.assertIsInstance(test, maser.data.cdpp.cdpp.CDPPDataFromFile)
+        test = ISEE3SBHData("", header, data, meta, name, orbit)
+        self.assertIsInstance(test, CDPPDataFromFile)
 
     def test_isee3_sbh_3d_radio_source_name(self):
         print("### Testing ISEE3SBHData name variable on 3D_RADIO_SOURCE dataset")
@@ -233,8 +233,8 @@ class VikingV4nDataTest(unittest.TestCase):
         status = {}
         orbit = {}
         name = "TEST"
-        test = maser.data.cdpp.viking.v4n.VikingV4nData("", header1, header2, header3, status, data, name, meta, orbit)
-        self.assertIsInstance(test, maser.data.cdpp.cdpp.CDPPDataFromFile)
+        test = VikingV4nData("", header1, header2, header3, status, data, name, meta, orbit)
+        self.assertIsInstance(test, CDPPDataFromFile)
 
     """VIKING_V4"""
 
@@ -591,3 +591,8 @@ class VikingV4nDataTest(unittest.TestCase):
         a = load_viking_v4l_wf()
         dt = a["DATETIME_UTC"]
         self.assertEqual(dt[0], datetime.datetime(1986, 3, 12, 7, 43, 0, 393000))
+
+
+# class CDPPwebservice(unittest.TestCase):
+
+    # def test_

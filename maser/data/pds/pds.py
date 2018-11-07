@@ -24,7 +24,8 @@ __status__ = "Production"
 __date__ = "28-FEB-2018"
 __project__ = "MASER/PADC PDS"
 
-__all__ = ["PDSDataFromLabel"]
+__all__ = ["PDSDataFromLabel", "PDSDataObject", "PDSDataTableObject", "PDSError", "PDSDataTimeSeriesObject",
+           "PDSLabelDict"]
 
 
 class PDSLabelDict(dict):
@@ -435,7 +436,7 @@ class PDSDataFromLabel(MaserDataFromFile):
     def _set_end_time(self):
         self.end_time = dateutil.parser.parse(self.label['STOP_TIME'], ignoretz=True)
 
-    def get_single_sweep(self, index):
+    def get_single_sweep(self, index=0):
         pass
 
     def get_first_sweep(self):

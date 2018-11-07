@@ -1,23 +1,22 @@
-import os
 import unittest
 
-import maser.data.data
-import maser.data.padc.lesia.isee3.reboot
-import maser.data.tests
+from maser.data import MaserDataFromFile
+from maser.data.padc.lesia.isee3.reboot import ISEE3SBHFile, ISEE3SBHMajorFrames
+from maser.data.tests import load_test_data, get_data_directory
 
-maser.data.tests.load_test_data("isee3")
+load_test_data("isee3")
 
-files = [os.path.join('data', 'isee3', 'tlm_uiowa', 'telm_2014-08-09T22_uiframe.bin'),
-         os.path.join('data', 'isee3', 'tlm_uiowa', 'telm_2014-08-09T23_uiframe.bin')]
-o1 = maser.data.padc.lesia.isee3.reboot.ISEE3SBHFile(files[0])
+files = [get_data_directory() / 'isee3' / 'tlm_uiowa' / 'telm_2014-08-09T22_uiframe.bin',
+         get_data_directory() / 'isee3' / 'tlm_uiowa' / 'telm_2014-08-09T23_uiframe.bin']
+o1 = ISEE3SBHFile(str(files[0]))
 
 
 class ISEE3SBHFileClassTest(unittest.TestCase):
 
     def test_init(self):
-        self.assertIsInstance(o1, maser.data.data.MaserDataFromFile)
+        self.assertIsInstance(o1, MaserDataFromFile)
         self.assertEqual(o1.n_minor_frame, 7204)
-        self.assertIsInstance(o1.data, maser.data.padc.lesia.isee3.reboot.ISEE3SBHMajorFrames)
+        self.assertIsInstance(o1.data, ISEE3SBHMajorFrames)
         self.assertEqual(o1.n_major_frame, 29)
         #self.assertSequenceEqual(numpy.shape(o1.data.minor_frames), (7204, 128))
 

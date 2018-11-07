@@ -1,6 +1,6 @@
 import unittest
 import os
-from maser.data.data import *
+from maser.data import *
 
 test_file = os.path.join('data', 'cdpp', 'isee3', 'SBH_ISEE3_19780820')
 o = MaserDataFromFile(test_file)

@@ -6,17 +6,19 @@ Python module to read RadioJOVE SPS and SPD raw data files
 """
 
 import numpy as np
+import csv
 import os
 import struct
 import pprint as pp
 import datetime
+import dateutil.parser
 import astropy.time
 from maser.data.data import MaserDataFromFile, MaserData
 from maser.utils.cdf import cdf
 
 __author__ = "Baptiste Cecconi"
-__date__ = "12-FEB-2017"
-__version__ = "0.20"
+__date__ = "11-MAY-2018"
+__version__ = "0.21"
 
 __all__ = ["RadioJoveDataSPXFromFile", "RadioJoveDataCDF", "convert_spx_to_cdf"]
 
@@ -38,9 +40,13 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
     Class for RadioJove data
     """
 
-    def __init__(self, file, load_data=True, verbose=True, debug=False):
+    def __init__(self, file, load_data=True, obsty_config=None, verbose=True, debug=False):
         MaserDataFromFile.__init__(self, file, verbose, debug)
         self.file_info = {'name': self.file, 'size': self.get_file_size(), 'file_data_offset': 0}
+        if obsty_config is not None:
+            self.obsty_config = self._load_obsty_config(obsty_config)
+        else:
+            self.obsty_config = None
         self.header = dict()
         self.load_data = load_data
         self.header['notes'] = {}
@@ -69,6 +75,22 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
 
     def close(self):
         self._close_radiojove_spx()
+
+    def _load_obsty_config(self, obsty_config_file):
+        obsty_config = []
+        with open(obsty_config_file, 'r') as f:
+            buffer = csv.reader(f)
+            for row in buffer:
+                if row[0].startswith('#'):
+                    pass
+                else:
+                    tmp_config = {}
+                    tmp_config['start_time'] = dateutil.parser.parse(row[0])
+                    tmp_config['end_time'] = dateutil.parser.parse(row[1])
+                    tmp_config['polar0'] = row[2]
+                    tmp_config['polar1'] = row[3]
+                    obsty_config.append(tmp_config)
+        return obsty_config
 
     def _extract_radiojove_spx_header(self):
         """
@@ -345,25 +367,28 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
         if self.header['obsname'] == 'AJ4CO DPS':
             self.header['obsty_id'] = 'AJ4CO'
             self.header['instr_id'] = 'DPS'
-            self.header['gain0'] = self.header['notes']['COLORGAIN'][0]
-            self.header['gain1'] = self.header['notes']['COLORGAIN'][1]
-            self.header['offset0'] = self.header['notes']['COLOROFFSET'][0]
-            self.header['offset1'] = self.header['notes']['COLOROFFSET'][1]
-            self.header['banner0'] = self.header['notes']['BANNER'][0].\
+            self.header['gain0'] = 1.95
+            self.header['gain1'] = 1.95
+            self.header['offset0'] = 1975
+            self.header['offset1'] = 1975
+            self.header['polar0'] = 'RHC'
+            self.header['polar1'] = 'LHC'
+            self.header['banner0'] = 'AJ4CO Observatory <DATE> - DPS on TFD Array - RCP'.\
                 replace('<DATE>', self.header['start_time'].date().isoformat())
-            self.header['banner1'] = self.header['notes']['BANNER'][1].\
+            self.header['banner1'] = 'AJ4CO Observatory <DATE> - DPS on TFD Array - RCP'.\
                 replace('<DATE>', self.header['start_time'].date().isoformat())
-            self.header['antenna_type'] = self.header['notes']['ANTENNATYPE']
-            self.header['color_file'] = self.header['notes']['COLORFILE']
-            self.header['free_text'] = self.header['notes']['free_text']
-        elif self.header['obsname'] == 'HNRAO - RSP2 - RCP':
+            self.header['antenna_type'] = '8-element TFD array'
+            self.header['color_file'] = 'AJ4CO-Rainbow.txt'
+        elif self.header['obsname'] == 'HNRAO LWA':
             self.header['obsty_id'] = 'HNRAO'
-            self.header['instr_id'] = 'RSP2'
+            self.header['instr_id'] = 'LWA'
             self.header['gain0'] = 2.00
             self.header['gain1'] = 2.00
             self.header['offset0'] = 2000
             self.header['offset1'] = 2000
-            self.header['banner0'] = self.header['notes']['BANNER'][0].\
+            self.header['polar0'] = 'RHC'
+            self.header['polar1'] = 'LHC'
+            self.header['banner0'] = '<DATE>  - RCP'.\
                 replace('<DATE>', self.header['start_time'].date().isoformat())
             self.header['banner1'] = self.header['notes']['BANNER'][1].\
                 replace('<DATE>', self.header['start_time'].date().isoformat())
@@ -380,6 +405,22 @@ class RadioJoveDataSPXFromFile(MaserDataFromFile):
             self.header['banner0'] = self.header['notes']['BANNER'][0].\
                 replace('<DATE>', self.header['start_time'].date().isoformat())
             self.header['banner1'] = self.header['notes']['BANNER'][1].\
+                replace('<DATE>', self.header['start_time'].date().isoformat())
+            self.header['antenna_type'] = self.header['notes']['ANTENNATYPE']
+            self.header['color_file'] = self.header['notes']['COLORFILE']
+            self.header['free_text'] = self.header['notes']['free_text']
+        elif self.header['obsname'] == 'MTSU':
+            self.header['obsty_id'] = 'MTSU'
+            self.header['instr_id'] = 'FSX-6S'
+            self.header['gain0'] = self.header['notes']['COLORGAIN'][0]
+            self.header['gain1'] = self.header['notes']['COLORGAIN'][1]
+            self.header['offset0'] = self.header['notes']['COLOROFFSET'][0]
+            self.header['offset1'] = self.header['notes']['COLOROFFSET'][1]
+            self.header['polar0'] = 'RHC'
+            self.header['polar1'] = 'LHC'
+            self.header['banner0'] = self.header['notes']['BANNER'][0]. \
+                replace('<DATE>', self.header['start_time'].date().isoformat())
+            self.header['banner1'] = self.header['notes']['BANNER'][1]. \
                 replace('<DATE>', self.header['start_time'].date().isoformat())
             self.header['antenna_type'] = self.header['notes']['ANTENNATYPE']
             self.header['color_file'] = self.header['notes']['COLORFILE']

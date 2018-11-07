@@ -1,14 +1,14 @@
 import unittest
 import datetime
 import os
-import maser.data.tests
-import maser.data.nancay.nda.nda
-import maser.data.nancay.nda.newroutine
+from maser.data.tests import load_test_data, get_data_directory
+from maser.data.nancay.nda import NDADataECube
+from maser.data.nancay.nda.newroutine import NDANewRoutineData
 
-maser.data.tests.test_data_files("nda")
+load_test_data("nda")
 
-test_file = os.path.join('data', 'nda', 'newroutine', 'J20170101_022612_Rou.dat')
-rou = maser.data.nancay.nda.newroutine.NDANewRoutineData(test_file)
+test_file = get_data_directory() / 'nda' / 'newroutine' / 'J20170101_022612_Rou.dat'
+rou = NDANewRoutineData(str(test_file))
 sweep_first = rou.get_first_ecube()
 sweep_last = rou.get_last_ecube()
 sweep_100 = rou.get_single_ecube(100)
@@ -39,9 +39,9 @@ class NDANewRoutineDataClass(unittest.TestCase):
 
     def test_get_freq_axis(self):
         f = rou.get_freq_axis()
-        self.assertEqual(len(f), 2048)
-        self.assertEqual(f[0], 0.)
-        self.assertEqual(f[-1], 99.951171875)
+        self.assertEqual(len(f), 1597)
+        self.assertEqual(f[0], 10.009765625)
+        self.assertEqual(f[-1], 87.939453125)
 
 
 class NDANewRoutineSweep(unittest.TestCase):
@@ -49,9 +49,9 @@ class NDANewRoutineSweep(unittest.TestCase):
     """Test Case for NDARoutineSweep class"""
 
     def test_class(self):
-        self.assertIsInstance(sweep_first, maser.data.nancay.nda.nda.NDADataECube)
-        self.assertIsInstance(sweep_last, maser.data.nancay.nda.nda.NDADataECube)
-        self.assertIsInstance(sweep_100, maser.data.nancay.nda.nda.NDADataECube)
+        self.assertIsInstance(sweep_first, NDADataECube)
+        self.assertIsInstance(sweep_last, NDADataECube)
+        self.assertIsInstance(sweep_100, NDADataECube)
 
     def test_index(self):
         self.assertEqual(sweep_first.index, 0)
@@ -69,6 +69,6 @@ class NDANewRoutineSweep(unittest.TestCase):
 
     def test_load_data(self):
         self.assertEqual(len(sweep_100.data['corr']), 4)
-        self.assertEqual(len(sweep_100.data['corr'][0]['data']), 2048)
+        self.assertEqual(len(sweep_100.data['corr'][0]['data']), 1597)
         self.assertEqual(len(sweep_101.data['corr']), 4)
         self.assertEqual(len(sweep_101.data['corr'][0]['data']), 0)

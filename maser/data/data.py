@@ -18,7 +18,8 @@ __date__ = "26-JUL-2017"
 __version__ = "0.10"
 __project__ = "MASER"
 
-__all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord", "MaserDataSweep"]
+__all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord",
+           "MaserDataSweep", "MaserDataFromFileCDF"]
 
 # defining local library paths
 

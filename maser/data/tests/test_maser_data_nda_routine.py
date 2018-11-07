@@ -1,16 +1,18 @@
 import unittest
 import datetime
 import os
-import maser.data.tests
-import maser.data.nancay.nda.routine
+from maser.data.tests import load_test_data, get_data_directory
+from maser.data.nancay.nda.routine import load_nda_routine_from_file, NDARoutineDataRT1, NDARoutineSweepRT1, \
+    NDARoutineDataCDF, NDARoutineSweepCDF
 
-maser.data.tests.load_test_data("nda")
+load_test_data("nda")
 
-test_file_rt1 = os.path.join('data', 'nda', 'routine', 'J160131.RT1')
-o_rt1 = maser.data.nancay.nda.routine.load_nda_routine_from_file(test_file_rt1)
+test_file_rt1 = os.path.join(str(get_data_directory()), 'nda', 'routine', 'J160131.RT1')
+o_rt1 = load_nda_routine_from_file(test_file_rt1)
 
-test_file_cdf = os.path.join('data', 'nda', 'routine', 'srn_nda_routine_jup_edr_201601302247_201601310645_V12.cdf')
-o_cdf= maser.data.nancay.nda.routine.load_nda_routine_from_file(test_file_cdf)
+test_file_cdf = os.path.join(str(get_data_directory()), 'nda', 'routine',
+                             'srn_nda_routine_jup_edr_201601302247_201601310645_V12.cdf')
+o_cdf= load_nda_routine_from_file(test_file_cdf)
 
 
 class NancayNDARoutineDataRT1Class(unittest.TestCase):
@@ -18,7 +20,7 @@ class NancayNDARoutineDataRT1Class(unittest.TestCase):
     """Test case for NDARoutineDataRT1 class"""
 
     def test_class(self):
-        self.assertIsInstance(o_rt1, maser.data.nancay.nda.routine.NDARoutineDataRT1)
+        self.assertIsInstance(o_rt1, NDARoutineDataRT1)
 
     def test_dataset_name(self):
         self.assertEqual(o_rt1.name, "SRN/NDA Routine RT1 Dataset")
@@ -41,7 +43,7 @@ class NancayNDARoutineDataRT1Class(unittest.TestCase):
 
     def test_get_single_sweep(self):
         sweep = o_rt1.get_single_sweep(0)
-        self.assertIsInstance(sweep, maser.data.nancay.nda.routine.NDARoutineSweepRT1)
+        self.assertIsInstance(sweep, NDARoutineSweepRT1)
 
     def test_get_freq_axis(self):
         f = o_rt1.get_freq_axis()
@@ -72,7 +74,7 @@ class NancayNDARoutineDataCDFClass(unittest.TestCase):
     """Test case for NDARoutineDataCDF class"""
 
     def test_class(self):
-        self.assertIsInstance(o_cdf, maser.data.nancay.nda.routine.NDARoutineDataCDF)
+        self.assertIsInstance(o_cdf, NDARoutineDataCDF)
 
     def test_dataset_name(self):
         self.assertEqual(o_cdf.name, "SRN/NDA Routine EDR CDF Dataset")
@@ -92,7 +94,7 @@ class NancayNDARoutineDataCDFClass(unittest.TestCase):
 
     def test_get_single_sweep(self):
         sweep = o_cdf.get_single_sweep(0)
-        self.assertIsInstance(sweep, maser.data.nancay.nda.routine.NDARoutineSweepCDF)
+        self.assertIsInstance(sweep, NDARoutineSweepCDF)
 
     def test_get_freq_axis(self):
         f = o_cdf.get_freq_axis()
@@ -123,23 +125,23 @@ class NancayNDARoutineSweepRT1Class(unittest.TestCase):
     """Test case for NDARoutineSweepRT1 class"""
 
     def test_polar(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0)
+        sweep = NDARoutineSweepRT1(o_rt1, 0)
         self.assertEqual(sweep.data['polar'], 'LL')
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 1)
+        sweep = NDARoutineSweepRT1(o_rt1, 1)
         self.assertEqual(sweep.data['polar'], 'RR')
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 1234)
+        sweep = NDARoutineSweepRT1(o_rt1, 1234)
         self.assertEqual(sweep.data['polar'], 'LL')
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 2345)
+        sweep = NDARoutineSweepRT1(o_rt1, 2345)
         self.assertEqual(sweep.data['polar'], 'RR')
 
     def test_load_data(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0, False)
+        sweep = NDARoutineSweepRT1(o_rt1, 0, False)
         self.assertEqual(len(sweep.data['data']), 0)
         sweep.load_data()
         self.assertEqual(len(sweep.data['data']), 400)
 
     def test_get_data(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0)
+        sweep = NDARoutineSweepRT1(o_rt1, 0)
         direct = sweep.data['data']
         method = sweep.get_data()
         self.assertEqual(direct, method)
@@ -147,12 +149,12 @@ class NancayNDARoutineSweepRT1Class(unittest.TestCase):
         self.assertEqual(direct[399], 69)
 
     def test_get_data_in_db(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0)
+        sweep = NDARoutineSweepRT1(o_rt1, 0)
         data = sweep.get_data_in_db()
         self.assertEqual(data[0], 10.0)
 
     def test_get_time(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepRT1(o_rt1, 0)
+        sweep = NDARoutineSweepRT1(o_rt1, 0)
         self.assertEqual(sweep.get_time(), datetime.time(22, 47, 6, 30000))
         self.assertEqual(sweep.get_time().hour, sweep.data['hms']['hr'])
         self.assertEqual(sweep.get_time().minute, sweep.data['hms']['min'])
@@ -171,21 +173,22 @@ class NancayNDARoutineSweepCDFClass(unittest.TestCase):
     """Test case for NDARoutineSweepCDF class"""
 
     def test_polar(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        sweep = NDARoutineSweepCDF(o_cdf, 0)
         self.assertEqual(sweep.data['polar'], ['LL', 'RR'])
 
     def test_load_data(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0, False)
+        sweep = NDARoutineSweepCDF(o_cdf, 0, False)
         self.assertEqual(len(sweep.data['data']), 0)
         sweep.load_data('LL')
         self.assertListEqual(list(sweep.data['data'].keys()), ['LL'])
         self.assertEqual(len(sweep.data['data']), 1)
         sweep.load_data()
+        print((sweep.data['data'].keys()))
         self.assertEqual(len(sweep.data['data']['LL']), 400)
         self.assertEqual(len(sweep.data['data']['RR']), 400)
 
     def test_get_data(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        sweep = NDARoutineSweepCDF(o_cdf, 0)
         direct = sweep.data['data']
         method = sweep.get_data()
         self.assertEqual(direct, method)
@@ -193,12 +196,12 @@ class NancayNDARoutineSweepCDFClass(unittest.TestCase):
         self.assertEqual(direct['LL'][399], 69)
 
     def test_get_data_in_db(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        sweep = NDARoutineSweepCDF(o_cdf, 0)
         data = sweep.get_data_in_db()
         self.assertEqual(data['LL'][0], 10.0)
 
     def test_get_time(self):
-        sweep = maser.data.nancay.nda.routine.NDARoutineSweepCDF(o_cdf, 0)
+        sweep = NDARoutineSweepCDF(o_cdf, 0)
         self.assertEqual(sweep.get_time(), datetime.time(22, 47, 6, 30000))
 
     def test_get_datetime(self):
