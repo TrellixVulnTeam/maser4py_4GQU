@@ -83,7 +83,7 @@ class CassiniKronosError(MaserError):
     pass
 
 
-class CassiniKronosLevel:
+class CassiniKronosLevel(object):
 
     def __init__(self, level: str, sublevel='', verbose=False, debug=False):
         self.name = level
