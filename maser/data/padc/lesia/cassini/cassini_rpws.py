@@ -440,10 +440,11 @@ class Cassini(object):
         cdf.attrs['Descriptor'] = 'RPWS'
         cdf.attrs['Data_version'] = '10'
         cdf.attrs['Instrument_type'] = 'Radio and Plasma Waves (space)'
-        cdf.attrs['Logical_file_id'] = 'co_rpws_hfr_{}_{}_{}_v{}'.format(self.level,
-                                                                         self._time[0].strftime('%Y%m%d%H%M%S%f'),
-                                                                         self._time[1].strftime('%Y%m%d%H%M%S%f'),
-                                                                         '10')
+        cdf.attrs['Logical_file_id'] = 'co_rpws_hfr_{}_{}_{}_v{}'.\
+            format(self.level,
+                   self.data['time'][0].datetime.strftime('%Y%m%d%H%M%S%f'),
+                   self.data['time'][-1].datetime.strftime('%Y%m%d%H%M%S%f'),
+                   '10')
         cdf.attrs['Logical_source'] = 'co_rpws_hfr_{}'.format(self.level)
         cdf.attrs['Logical_source_description'] = 'Cassini-RPWS-HFR level 2 dataset'
         cdf.attrs['File_naming_convention'] = 'source_descriptor_type_yyyyMMddHHmm_yyyyMMddHHmm_ver'
@@ -477,7 +478,8 @@ class Cassini(object):
         cdf.attrs['PDS_observation_type'] = "Waves"
         cdf.attrs['PDS_collection_id'] = "urn:nasa:pds:co-rpws-saturn:hfr-n2-data"
         cdf.attrs['PDS_LID'] = "urn:nasa:pds:co-rpws-saturn:hfr-n2-data:{}-{}-cdf".\
-            format(self._time[0].strftime('%Y%m%d%H%M%S%f'), self._time[1].strftime('%Y%m%d%H%M%S%f'))
+            format(self.data['time'][0].datetime.strftime('%Y%m%d%H%M%S%f'),
+                   self.data['time'][-1].datetime.strftime('%Y%m%d%H%M%S%f'))
 #        cdf.attrs['PDS_LID_plot'] = "urn:nasa:pds:co-rpws-saturn:hfr-qtn-browse:{}-{}-plot".\
 #            format(self._get_ymdhm_start(), self._get_ymdhm_end())
 #        cdf.attrs['PDS_LID_thumbnail'] = "urn:nasa:pds:co-rpws-saturn:hfr-qtn-browse:{}-{}-thumbnail".\
@@ -520,8 +522,8 @@ class Cassini(object):
         cdf.new('Frequency', data=self.data['freq'], type=pycdf.const.CDF_REAL4,
                 compress=pycdf.const.NO_COMPRESSION)
         cdf['Frequency'] = self.data['freq']
-        cdf['EPOCH'].attrs.new('VALIDMIN', 3.5, type=pycdf.const.CDF_REAL4)
-        cdf['EPOCH'].attrs.new('VALIDMAX', 16125, type=pycdf.const.CDF_REAL4)
+        cdf['Frequency'].attrs.new('VALIDMIN', 3.5, type=pycdf.const.CDF_REAL4)
+        cdf['Frequency'].attrs.new('VALIDMAX', 16125, type=pycdf.const.CDF_REAL4)
         cdf['Frequency'].attrs['SCALEMIN'] = self.data['freq'][0]
         cdf['Frequency'].attrs['SCALEMAX'] = self.data['freq'][-1]
         cdf['Frequency'].attrs['UNITS'] = 'kHz'
