@@ -421,29 +421,118 @@ class Cassini(object):
         """
         from spacepy import pycdf
 
+        # Opening CDF object
+        pycdf.lib.set_backward(False)  # this is setting the CDF version to be used
+
         cdf = pycdf.CDF(cdfname, '')
-        cdf['Epoch'] = self.data['time'].datetime
-        cdf['Frequency'] = self.data['freq']
-        for dcol in self.dcol:
-            cdf[dcol] = np.squeeze(self.data[dcol])
-            cdf[dcol].attrs['level'] = self.level
-            cdf[dcol].attrs['ant'] = self.conf
-        
-        cdf.attrs['Generation_date'] = Time.now().isot
-        cdf.attrs['Data_version'] = '01'
+
+        # required settings for ISTP and PDS compliance
+        cdf.col_major(True)  # Column Major
+        cdf.compress(pycdf.const.NO_COMPRESSION)  # No file level compression
+
+        # Writing ISTP global attributes
+        cdf.attrs["Project"] = ["PADC>Paris Astronomical Data Centre",
+                                "MASER>Mesure Analyse et Simulation d'Emissions Radio",
+                                "CDPP>Centre de Donnees de la Physique des Plasmas",
+                                "PDS-PPI>Planetary Plasma Interaction Node of NASA Planetary Data System"]
+        cdf.attrs['Discipline'] = "Planetary Physics>Waves"
+        cdf.attrs['Data_type'] = 'HFR_{}'.format(self.level.upper())
+        cdf.attrs['Descriptor'] = 'RPWS'
+        cdf.attrs['Data_version'] = '10'
+        cdf.attrs['Instrument_type'] = 'Radio and Plasma Waves (space)'
+        cdf.attrs['Logical_file_id'] = 'co_rpws_hfr_{}_{}_{}_v{}'.format(self.level,
+                                                                         self._time[0].strftime('%Y%m%d%H%M%S%f'),
+                                                                         self._time[1].strftime('%Y%m%d%H%M%S%f'),
+                                                                         '10')
+        cdf.attrs['Logical_source'] = 'co_rpws_hfr_{}'.format(self.level)
+        cdf.attrs['Logical_source_description'] = 'Cassini-RPWS-HFR level 2 dataset'
+        cdf.attrs['File_naming_convention'] = 'source_descriptor_type_yyyyMMddHHmm_yyyyMMddHHmm_ver'
+        cdf.attrs['Mission_group'] = 'Cassini-Huygens'
+        cdf.attrs['PI_name'] = "W.S. Kurth"
+        cdf.attrs['PI_affiliation'] = 'University of Iowa'
+        cdf.attrs['Source_name'] = 'CO>Cassini Orbiter'
+        cdf.attrs['TEXT'] = 'Cassini-RPWS-HFR Level 2 dataset'
         cdf.attrs['Generated_by'] = 'LESIA/ObsParis'
-        cdf.attrs['Mission_group'] = 'MASER'
+        cdf.attrs['Generation_date'] = Time.now().isot
+        cdf.attrs['LINK_TEXT'] = ["More details on ", "CDPP archive"]
+        cdf.attrs['LINK_TITLE'] = ["LESIA Cassini Kronos webpage", "web site"]
+        cdf.attrs['HTTP_LINK'] = ["http://www.lesia.obspm.fr/kronos", "https://cdpp-archive.cnes.fr"]
+        cdf.attrs['MODS'] = " "
+        cdf.attrs['Parents'] = " "
+        cdf.attrs['Rules_of_use'] = " "
+        cdf.attrs['Skeleton_version'] = " "
+        cdf.attrs['Software_version'] = " "
+        cdf.attrs['Time_resolution'] = " "
+        cdf.attrs['Acknowledgement'] = " "
+        cdf.attrs['ADID_ref'] = " "
+        cdf.attrs['Validate'] = " "
+
+        # Writing PDS/PPI global attributes
+
+#        cdf.attrs['PDS_orbit_number'] = self.rev_id
+#        cdf.attrs['PDS_mission_phase'] = self._get_mission_phase()
         cdf.attrs['PDS_start_time'] = self.data['time'][0].isot
         cdf.attrs['PDS_stop_time'] =  self.data['time'][-1].isot
+        cdf.attrs['PDS_observation_target'] = "Saturn"
+        cdf.attrs['PDS_observation_type'] = "Waves"
+        cdf.attrs['PDS_collection_id'] = "urn:nasa:pds:co-rpws-saturn:hfr-n2-data"
+        cdf.attrs['PDS_LID'] = "urn:nasa:pds:co-rpws-saturn:hfr-n2-data:{}-{}-cdf".\
+            format(self._time[0].strftime('%Y%m%d%H%M%S%f'), self._time[1].strftime('%Y%m%d%H%M%S%f'))
+#        cdf.attrs['PDS_LID_plot'] = "urn:nasa:pds:co-rpws-saturn:hfr-qtn-browse:{}-{}-plot".\
+#            format(self._get_ymdhm_start(), self._get_ymdhm_end())
+#        cdf.attrs['PDS_LID_thumbnail'] = "urn:nasa:pds:co-rpws-saturn:hfr-qtn-browse:{}-{}-thumbnail".\
+#            format(self._get_ymdhm_start(), self._get_ymdhm_end())
+#        cdf.attrs['PDS_LID_index'] = "urn:nasa:pds:co-rpws-saturn:hfr-qtn-document:index"
+
         cdf.attrs['VESPA_access_format'] = 'application/x-cdf'
         cdf.attrs['VESPA_dataproduct_type'] = 'DS>Dynamic Spectrum'
-        cdf.attrs['VESPA_feature_name'] = ''
+        cdf.attrs['VESPA_feature_name'] = ' '
         cdf.attrs['VESPA_instrument_host_name'] = 'Cassini'
         cdf.attrs['VESPA_instrument_name'] = 'RPWS'
         cdf.attrs['VESPA_measurement_type'] = 'em.radio'
         cdf.attrs['VESPA_publisher'] = 'LESIA/MASER/PADC'
         cdf.attrs['VESPA_spectral_range_max'] = self.data['freq'].max() * 1.e3
         cdf.attrs['VESPA_spectral_range_min'] = self.data['freq'].min() * 1.e3
+
+        # SETTING UP VARIABLES AND VARIABLE ATTRIBUTES
+        #   The EPOCH variable type must be CDF_TIME_TT2000
+        #   PDS-CDF requires no compression for variables.
+        cdf.new('EPOCH', data=self.data['time'].datetime, type=pycdf.const.CDF_TIME_TT2000,
+                compress=pycdf.const.NO_COMPRESSION)
+        cdf['EPOCH'].attrs.new('VALIDMIN', data=self.data['time'][0].datetime, type=pycdf.const.CDF_TIME_TT2000)
+        cdf['EPOCH'].attrs.new('VALIDMAX', data=self.data['time'][-1].datetime, type=pycdf.const.CDF_TIME_TT2000)
+        cdf['EPOCH'].attrs.new('SCALEMIN', data=self.data['time'][0].datetime, type=pycdf.const.CDF_TIME_TT2000)
+        cdf['EPOCH'].attrs.new('SCALEMAX', data=self.data['time'][-1].datetime, type=pycdf.const.CDF_TIME_TT2000)
+        cdf['EPOCH'].attrs['CATDESC'] = "Default time (TT2000)"
+        cdf['EPOCH'].attrs['FIELDNAM'] = "Epoch"
+        cdf['EPOCH'].attrs.new('FILLVAL', data=-9223372036854775808, type=pycdf.const.CDF_TIME_TT2000)
+        cdf['EPOCH'].attrs['LABLAXIS'] = "Epoch"
+        cdf['EPOCH'].attrs['UNITS'] = "ns"
+        cdf['EPOCH'].attrs['FORM_PTR'] = "CDF_TIME_TT2000"
+        cdf['EPOCH'].attrs['VAR_TYPE'] = "support_data"
+        cdf['EPOCH'].attrs['SCALETYP'] = "linear"
+        cdf['EPOCH'].attrs['MONOTON'] = "INCREASE"
+        cdf['EPOCH'].attrs['REFERENCE_POSITION'] = "Spacecraft barycenter"
+        cdf['EPOCH'].attrs['SI_CONVERSION'] = "1.0e-9>s"
+        cdf['EPOCH'].attrs['UCD'] = "time.epoch"
+        cdf['EPOCH'].attrs['TIME_BASE'] = 'UTC'
+
+        cdf.new('Frequency', data=self.data['freq'], type=pycdf.const.CDF_REAL4,
+                compress=pycdf.const.NO_COMPRESSION)
+        cdf['Frequency'] = self.data['freq']
+        cdf['EPOCH'].attrs.new('VALIDMIN', 3.5, type=pycdf.const.CDF_REAL4)
+        cdf['EPOCH'].attrs.new('VALIDMAX', 16125, type=pycdf.const.CDF_REAL4)
+        cdf['Frequency'].attrs['SCALEMIN'] = self.data['freq'][0]
+        cdf['Frequency'].attrs['SCALEMAX'] = self.data['freq'][-1]
+        cdf['Frequency'].attrs['UNITS'] = 'kHz'
+
+        for dcol in self.dcol:
+            cdf[dcol] = np.squeeze(self.data[dcol])
+            cdf[dcol].attrs['DEPEND_0'] = 'EPOCH'
+            cdf[dcol].attrs['DEPEND_1'] = 'Frequency'
+            cdf[dcol].attrs['level'] = self.level
+            cdf[dcol].attrs['ant'] = self.conf
+
         cdf.close()
         return
     # ================================================================================= #
@@ -651,10 +740,10 @@ class Cassini(object):
 
 # --------- Examples --------- #
 
-c = Cassini()
-c.load(time=['2012-06-29 15:00:00', '2012-06-29 16:20:00'], level='n2', dcol=['autoX'], conf=[3])
+#c = Cassini()
+#c.load(time=['2012-06-29 15:00:00', '2012-06-29 16:20:00'], level='n2', dcol=['autoX'], conf=[3])
 # c.load(time=['2012-06-29 09:00:01', '2012-06-29 23:59:59'], level='n2', dcol=['autoX'], conf=[3, 11])
-c.write_cdf('/root/aloh/cassini/test.cdf')
+#c.write_cdf('/root/aloh/cassini/test.cdf')
 
 # d = Cassini()
 # d.load(time=['2012-06-29 16:00:00', '2012-06-29 16:30:00'], level='n3b', dcol=['crossR', 'crossI'], conf=[3])
