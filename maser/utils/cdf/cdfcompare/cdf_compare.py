@@ -20,7 +20,7 @@ def checking_file_exist(cdf_file):
         exit()
     if os.access(cdf_file, os.R_OK) == False:
         logger.error("%s : is not readable !", cdf_file)
-        exist()
+        exit()
 
 # Listing the names of all data variables (zVars)
 def read_cdf_list_keys(cdf_file):
