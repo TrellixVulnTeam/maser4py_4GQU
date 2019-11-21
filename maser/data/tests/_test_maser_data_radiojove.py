@@ -1,30 +1,13 @@
-import datetime
-<<<<<<< HEAD
-import os
 import unittest
-
 import numpy
-from maser.data import MaserDataFromFile, MaserDataFromFileCDF
-from maser.data.padc.radiojove.radiojove_spx import convert_spx_to_cdf_single, RadioJoveDataSPXFromFile
-from maser.data.tests import load_test_data, get_data_directory
-import maser.utils.cdf
-
-load_test_data("radiojove")
-
-sps_file = get_data_directory() / 'radiojove' / 'sps' / '161210000000.sps'
-o = RadioJoveDataSPXFromFile(str(sps_file))
-
-os.environ["CDF_OUTPUT_DIR"] = "/tmp/"
-cdf_file = convert_spx_to_cdf_single(str(sps_file), debug=True)
-c = MaserDataFromFileCDF(cdf_file)
-=======
+import datetime
 from maser.data.data import *
 from maser.data.padc.radiojove.radiojove_spx import RadioJoveDataSPXFromFile
 from maser.data.tests import load_test_data, get_data_directory
 
 load_test_data("radiojove")
 file_path = str(get_data_directory() / "radiojove" / "sps" / "161210000000.sps")
->>>>>>> develop
+o = RadioJoveDataSPXFromFile(file_path)
 
 
 class RadioJoveDataTest(unittest.TestCase):
@@ -32,17 +15,9 @@ class RadioJoveDataTest(unittest.TestCase):
     """Test case for RadioJoveData class"""
 
     def test_class(self):
-<<<<<<< HEAD
         self.assertIsInstance(o, MaserDataFromFile)
 
     def test_file_info(self):
-=======
-        o = RadioJoveDataSPXFromFile(file_path)
-        self.assertIsInstance(o, MaserDataFromFile)
-
-    def test_file_info(self):
-        o = RadioJoveDataSPXFromFile(file_path)
->>>>>>> develop
         self.assertIsInstance(o.file_info, dict)
         self.assertTrue(set(o.file_info.keys()) == {'bytes_per_step', 'data_length', 'prim_hdr_length',
                                                     'data_format', 'record_data_offset', 'name', 'size',
@@ -57,30 +32,6 @@ class RadioJoveDataTest(unittest.TestCase):
         self.assertTrue(o.file_info['lun'].closed)
 
     def test_notes(self):
-<<<<<<< HEAD
-        notes = o.header['notes']
-        self.assertIsInstance(notes, dict)
-        self.assertEqual(notes['ANTENNATYPE'], 'unknown')
-        self.assertIsInstance(notes['BANNER'], list)
-        self.assertEqual(notes['BANNER'][0], 'AJ4CO Observatory <DATE> - DPS on TFD Array - RCP')
-        self.assertEqual(notes['BANNER'][1], 'AJ4CO Observatory <DATE> - DPS on TFD Array - LCP')
-        self.assertEqual(notes['COLORFILE'], 'AJ4CO-Rainbow.txt')
-        self.assertIsInstance(notes['COLORGAIN'], list)
-        self.assertEqual(notes['COLORGAIN'], [1.95, 1.95])
-        self.assertIsInstance(notes['COLOROFFSET'], list)
-        self.assertEqual(notes['COLOROFFSET'], [1975, 1975])
-        self.assertEqual(notes['COLORRES'], 1)
-        self.assertEqual(notes['DUALSPECFILE'], True)
-        self.assertEqual(notes['HIF'], 32000000)
-        self.assertEqual(notes['LOWF'], 16000000)
-        self.assertEqual(notes['RCVR'], 5)
-        self.assertEqual(notes['STEPS'], 300)
-        self.assertEqual(notes['SWEEPS'], 10412)
-        self.assertEqual(notes['free_text'], '')
-
-    def test_header_sps(self):
-=======
-        o = RadioJoveDataSPXFromFile(file_path)
         self.assertIsInstance(o.notes, dict)
         self.assertEqual(o.notes['ANTENNATYPE'], 'unknown')
         self.assertIsInstance(o.notes['BANNER'], list)
@@ -101,8 +52,6 @@ class RadioJoveDataTest(unittest.TestCase):
         self.assertEqual(o.notes['free_text'], '')
 
     def test_header_sps(self):
-        o = RadioJoveDataSPXFromFile(file_path)
->>>>>>> develop
         self.assertIsInstance(o.header, dict)
         self.assertEqual(o.header['antenna_type'], 'unknown')
         self.assertEqual(o.header['author'], 'Dave Typinski')
@@ -184,8 +133,7 @@ class RadioJoveDataTest(unittest.TestCase):
         self.assertEqual(o.frequency[0], 32)
 
 
-class RadioJoveDataCDF(unittest.TestCase):
-
-    def test_class(self):
-        self.assertIsInstance(c, maser.data.data.MaserDataFromFileCDF)
-        self.assertIsInstance(c.cdf_handle, maser.utils.cdf.CDF)
+#class RadioJoveDataCDF(unittest.TestCase):
+#    def test_class(self):
+#        self.assertIsInstance(c, maser.data.data.MaserDataFromFileCDF)
+#        self.assertIsInstance(c.cdf_handle, maser.utils.cdf.CDF)
