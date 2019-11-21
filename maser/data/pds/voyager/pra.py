@@ -17,7 +17,8 @@ __status__ = "Production"
 __date__ = "27-FEB-2018"
 __project__ = "MASER/PADC PDS/PPI/Voyager/PRA"
 
-__all__ = ["PDSPPIVoyagerPRADataFromLabel", "PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel"]
+__all__ = ["PDSPPIVoyagerPRADataFromLabel", "PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel",
+           "PDSPPIVoyagerPRAHighRateTimeSeriesObject", "PDSPPIVoyagerPRADataObject"]
 
 import numpy
 import struct
