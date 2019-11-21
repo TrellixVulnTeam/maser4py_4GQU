@@ -1,18 +1,15 @@
 import unittest
 import datetime
-import os
 from maser.data.tests import load_test_data, get_data_directory
 from maser.data.nancay.nda.routine import load_nda_routine_from_file, NDARoutineDataRT1, NDARoutineSweepRT1, \
     NDARoutineDataCDF, NDARoutineSweepCDF
 
 load_test_data("nda")
+test_file_rt1 = get_data_directory() / "nda" / "routine" / "J160131.RT1"
+o_rt1 = load_nda_routine_from_file(str(test_file_rt1))
 
-test_file_rt1 = os.path.join(str(get_data_directory()), 'nda', 'routine', 'J160131.RT1')
-o_rt1 = load_nda_routine_from_file(test_file_rt1)
-
-test_file_cdf = os.path.join(str(get_data_directory()), 'nda', 'routine',
-                             'srn_nda_routine_jup_edr_201601302247_201601310645_V12.cdf')
-o_cdf= load_nda_routine_from_file(test_file_cdf)
+test_file_cdf = get_data_directory() / "nda" / "routine" / 'srn_nda_routine_jup_edr_201601302247_201601310645_V12.cdf'
+o_cdf= load_nda_routine_from_file(str(test_file_cdf))
 
 
 class NancayNDARoutineDataRT1Class(unittest.TestCase):

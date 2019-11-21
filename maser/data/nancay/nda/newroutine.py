@@ -6,21 +6,15 @@ Python module to read Nancay/NDA/NewRoutine data from SRN/NDA.
 @author: B.Cecconi(LESIA)
 """
 
-import struct
-import os
-import datetime
-import numpy
-import maser.utils.cdf.cdf as pycdf
-from maser.data.data import MaserDataFromFileCDF
-from maser.data.nancay.nda.nda import NDAError
-from maser.data.nancay.nda.nda import NDADataFromFile
-from maser.data.nancay.nda.nda import NDADataECube
-
 __author__ = "Baptiste Cecconi"
 __date__ = "24-OCT-2017"
 __version__ = "0.11"
 
 __all__ = ["NDANewRoutineData", "NDANewRoutineError", "NDANewRoutineECube", "read_srn_nda_new_routine"]
+
+import struct
+import os
+from ..nda import NDAError, NDADataFromFile, NDADataECube
 
 
 class NDANewRoutineError(NDAError):
@@ -177,7 +171,8 @@ class NDANewRoutineData(NDADataFromFile):
 
         header['nbchan'] = nbchan
         header['cube_size'] = 4 * (8 + header['nbchan'] * (header['nfreq'] + 2))
-        header['magic_word'] = 0x7F800000
+        header['magic_word_head'] = 0x7F800000
+        header['magic_word_corr'] = 0xFF800001
         header['record_fmt'] = record_fmt
 
         return header

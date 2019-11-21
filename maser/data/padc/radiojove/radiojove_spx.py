@@ -1383,7 +1383,7 @@ def convert_spx_to_cdf_single(file_spx, verbose=True, debug=False):
 
 
 ################################################################################
-# Main SPX to CDF 
+# Main SPX to CDF
 ################################################################################
 def convert_spx_to_cdf(file_spx, daily=False, debug=False):
     """
@@ -1424,7 +1424,4 @@ def convert_spx_to_cdf(file_spx, daily=False, debug=False):
 
     except RadioJoveError as e:
         print(e)
-
-
-
 

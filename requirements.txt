@@ -1,9 +1,11 @@
-numpy>=1.11.0
-openpyxl>=2.3.5
-Sphinx>=1.4.1
-matplotlib
-sphinx_rtd_theme
-pytz
 astropy
+matplotlib
+scipy
+numpy
+suds-py3
+Pillow
+openpyxl
+pytz
 python-dateutil
 scipy
+jinja2

@@ -6,15 +6,18 @@ Python module to read a Viking/V4n/E5 data file from CDPP deep archive (http://c
 @author: B.Cecconi(LESIA)
 """
 
-import os
-import struct
-from maser.data.cdpp.cdpp import CDPPDataFromFile
-
 __author__ = "Baptiste Cecconi"
 __date__ = "10-JUL-2017"
 __version__ = "0.11"
 
 __all__ = ["VikingV4nData", "read_viking"]
+
+# TODO: skip 1st record? => no, not for data downloaded from webservice...
+
+import os
+import struct
+from maser.data.cdpp import CDPPDataFromFile
+from .const import *
 
 
 class VikingV4nData(CDPPDataFromFile):
@@ -35,9 +38,9 @@ class VikingV4nData(CDPPDataFromFile):
 
     def get_datetime(self, is_utc=False):
         if is_utc:
-            return self.get_datetime_ccsds_ccs("UTC_")
+            return self.get_datetime_ccsds("UTC_P_Field", "UTC_T_Field")
         else:
-            return self.get_datetime_ccsds_ccs()
+            return self.get_datetime_ccsds()
 
     def getvar(self, var_name):
         """
@@ -87,7 +90,8 @@ class VikingV4nData(CDPPDataFromFile):
             meta = self.meta[var_name]
         return meta
 
-    def get_epncore(self):
+    def get_epncore_meta(self):
+
         md = CDPPDataFromFile.get_epncore_meta(self)
         md["time_min"] = self["DATETIME_UTC"][0]
         md["time_max"] = self["DATETIME_UTC"][-1]
@@ -105,7 +109,7 @@ def is_empty(data):
             return True
         elif all([v is None for v in data.values()]):
             return True
-    elif (type(data) is list) or (type(data) is tuple):
+    elif (type(data) is list) or (type(data) is tuple) or (type(data) is set):
         if all([v == 0 for v in data]):
             return True
         elif all([v is None for v in data]):
@@ -171,10 +175,11 @@ def read_viking(file_path, dataset="VIKING_V4", verbose=False):
     header1_dtype = ">h"
 
     # WARNING: CNES/CDPP SCRIBE DESCRIPTOR IS WRONG -- CCSDS DAY_IN_YEAR_02 is not present
-    header1_fields += ["CCSDS_PREAMBLE", "CCSDS_YEAR", "CCSDS_MONTH",
-                       "CCSDS_DAY", "CCSDS_HOUR", "CCSDS_MINUTE", "CCSDS_SECOND", "CCSDS_SECOND_E_2",
-                       "CCSDS_SECOND_E_4"]
-    header1_dtype += 'bhbbbbbbb'
+    # This dataset uses CCSDS-CCS Time Format.
+    # year, month, day, hour, minute, second, CCSDS_B0*256 + CCSDS_B1
+    header1_fields += ["CCSDS_PREAMBLE", "CCSDS_B0", "CCSDS_B1", "CCSDS_B2", "CCSDS_B3", "CCSDS_B4", "CCSDS_B5",
+                       "CCSDS_B6", "CCSDS_B7", "CCSDS_B8"]
+    header1_dtype += 'BBBBBBBBBB'
 
     header1_fields += ["CALENDAR_YEAR", "CALENDER_MONTH", "CALENDAR_DAY", "CALENDAR_HOUR",
                        "CALENDAR_MINUTE", "CALENDAR_SECOND", "CALENDAR_MILLI_SECOND"]
@@ -200,10 +205,10 @@ def read_viking(file_path, dataset="VIKING_V4", verbose=False):
                        "V4L_MODE_SWITCH_FLAGS_FIRST_SWITCH_SERIAL_NUMBER"]
     header1_dtype += 'hhh'
 
-    header1_fields += ["UTC_CCSDS_PREAMBLE", "UTC_CCSDS_YEAR", "UTC_CCSDS_MONTH",
-                       "UTC_CCSDS_DAY", "UTC_CCSDS_HOUR", "UTC_CCSDS_MINUTE", "UTC_CCSDS_SECOND",
-                       "UTC_CCSDS_SECOND_E_2", "UTC_CCSDS_SECOND_E_4"]
-    header1_dtype += 'bhbbbbbbb'
+    header1_fields += ["UTC_CCSDS_PREAMBLE", "UTC_CCSDS_B0", "UTC_CCSDS_B1", "UTC_CCSDS_B2",
+                       "UTC_CCSDS_B3", "UTC_CCSDS_B4", "UTC_CCSDS_B5", "UTC_CCSDS_B6",
+                       "UTC_CCSDS_B7", "UTC_CCSDS_B8"]
+    header1_dtype += 'BBBBBBBBBB'
 
     # WARNING: CNES/CDPP SCRIBE DESCRIPTOR IS WRONG -- CCSDS DAY_IN_YEAR_02 is not present
     header1_fields += ["UTC_CALENDAR_YEAR", "UTC_CALENDER_MONTH", "UTC_CALENDAR_DAY", "UTC_CALENDAR_HOUR",
@@ -305,6 +310,22 @@ def read_viking(file_path, dataset="VIKING_V4", verbose=False):
                 # Reading header1 parameters in the current record
                 block = frb.read(header1_length)
                 header1_i = dict(zip(header1_fields, struct.unpack(header1_dtype, block)))
+                # => Here we fix the `P_Field` which is corrupted
+                # we reverse the order of the bits in the byte
+                header1_i['P_Field'] = int('{:08b}'.format(header1_i['CCSDS_PREAMBLE'])[::-1], 2)
+                header1_i['T_Field'] = bytearray([header1_i['CCSDS_B0'], header1_i['CCSDS_B1'],
+                                                  header1_i['CCSDS_B2'], header1_i['CCSDS_B3'],
+                                                  header1_i['CCSDS_B4'], header1_i['CCSDS_B5'],
+                                                  header1_i['CCSDS_B6'], header1_i['CCSDS_B7'],
+                                                  header1_i['CCSDS_B8'],
+                                                  ])
+                header1_i['UTC_P_Field'] = int('{:08b}'.format(header1_i['UTC_CCSDS_PREAMBLE'])[::-1], 2)
+                header1_i['UTC_T_Field'] = bytearray([header1_i['UTC_CCSDS_B0'], header1_i['UTC_CCSDS_B1'],
+                                                      header1_i['UTC_CCSDS_B2'], header1_i['UTC_CCSDS_B3'],
+                                                      header1_i['UTC_CCSDS_B4'], header1_i['UTC_CCSDS_B5'],
+                                                      header1_i['UTC_CCSDS_B6'], header1_i['UTC_CCSDS_B7'],
+                                                      header1_i['UTC_CCSDS_B8'],
+                                                      ])
                 frb.read(header1_spare_len)
 
                 # Reading header2 parameters in the current record
@@ -606,56 +627,15 @@ def read_viking(file_path, dataset="VIKING_V4", verbose=False):
                 else:
                     data.append(data_i)
 
-    meta = {"VIKING_V4_V1": {"V1_RELATIVE_TIME": {"unit": "s",
-                                                  "description": "Time relative to the beginning of record"},
-                             "V1_EPAR": {"unit": "mV/m",
-                                         "description": "Electric field component parallel to B (magnetic field)"},
-                             "V1_EC": {"unit": "mV/m",
-                                       "description": "Electric field component along the direction that completes "
-                                                      "the coordinate system (PAR, C, D)"},
-                             "V1_ED": {"unit": "mV/m", "description": "Electric field component perpendiculer to B "
-                                                                      "and S (sun direction), positive along B x S"},
-                             "V1_VFG": {"unit": "V", "description": "Floating ground potential"},
-                             "V1_EPDIFF": {"unit": "mV/m",
-                                           "description": "Difference between max and min electric field magnitude "
-                                                          "during the following 1.2 seconds"},
-                             "V1_USER_BIAS": {"unit": "uA", "description": "Bias current"},
-                             "V1_VGUARD": {"unit": "V", "description": "Guard potential"},
-                             "V1_IFILL": {"unit": "N/A", "description": "Status bits"},
-                             "V1_ID": {"unit": "N/A", "description": "Not Used"}},
-            "VIKING_V4H_SFA": {"FREQUENCY_SFA": {"unit": "kHz",
-                                                 "description": "Stepped frequencies of the current scanning"},
-                               "ELECTRIC_SFA": {"unit": "(mV/m)^2/Hz",
-                                                "description": "SFA measurements for an electric field component, "
-                                                               "either Ey or Ez"},
-                               "MAGNETIC_SFA": {"unit": "pT^2/Hz",
-                                                "description": "SFA measurements for the magnetic field component Bx"}},
-            "VIKING_V4H_FB": {"FREQUENCY_FB": {"unit": "kHz", "description": "Center frequencies"},
-                              "MAGNETIC_FB": {"unit": "pT",
-                                              "description": "Measurements for the magnetic field sensor Bx"},
-                              "ELECTRIC_FB": {"unit": "mV/m",
-                                              "description": "Measurements for the electric field sensor Ey"}},
-            "VIKING_V4L_FBL": {"FREQUENCY_FBL": {"unit": "Hz", "description": "Center frequencies"},
-                               "ELECTRIC_FBL": {"unit": "mV/m ot dB relative to 1 %",
-                                                "description": "Measurements for the electric field sensor"}},
-            "VIKING_V4_V2": {"V2_AMPLITUDE": {"unit": "nT", "description": "Magnetic field module"},
-                             "V2_PSI": {"unit": "deg",
-                                        "description": "Angle between Ey antenna and the projection of magnetic field "
-                                                       "in the plane perpendicular to satellite spin axis"},
-                             "V2_PHI": {"unit": "deg",
-                                        "description": "Angle between magnetic field and Ey antenna"},
-                             "V2_THETA": {"unit": "deg",
-                                          "description": "Angle between magnetic field and satellite spin axis"}},
-            "VIKING_V4L_Ni": {"N1_PROBE": {"unit": "cm^-3",
-                                           "description": "Plasma density measurements supplied by N1 probe"},
-                              "N2_PROBE": {"unit": "cm^-3",
-                                           "description": "Plasma density measurements supplied by N2 probe"}},
-            "VIKING_V4L_DFT": {"DFT": {"unit": "(mV/m)^2/Hz or in dB relative to 1 %",
-                                       "description": "DFT power spectra"}},
-            "VIKING_V4L_WF": {"WF1": {"unit": "mV/m or in dB relative to 1 %",
-                                      "description": "Electric field waveform measurement"},
-                              "WF2": {"unit": "mV/m or in dB relative to 1 %",
-                                      "description": "Electric field waveform measurement"}}}
+    meta = {"VIKING_V4_V1": VIKING_V1_META,
+            "VIKING_V4H_SFA": VIKING_V4H_SFA_META,
+            "VIKING_V4H_FB": VIKING_V4H_FB_META,
+            "VIKING_V4L_FBL": VIKING_V4L_FBL_PHYS_META,
+            "VIKING_V4_V2": VIKING_V2_META,
+            "VIKING_V4L_Ni": VIKING_V4L_NI_META,
+            "VIKING_V4L_DFT": VIKING_V4L_DFT_PHYS_META,
+            "VIKING_V4L_WF": VIKING_V4L_WF_PHYS_META}
+
     if dataset != "VIKING_V4":
         meta = meta[dataset]
 

@@ -1,25 +1,37 @@
 import unittest
 import datetime
-import dateutil.parser
-import os
 from maser.data.tests import load_test_data, get_data_directory
 from maser.data import MaserDataFromFile
-import numpy
-from maser.data.pds.ppi.voyager.pra import PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
+from maser.data.pds.voyager.pra import PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
     PDSPPIVoyagerPRADataFromLabel, PDSPPIVoyagerPRADataObject
-from maser.data.pds import PDSDataFromLabel, PDSLabelDict
+from maser.data.pds.classes import PDSDataFromLabel, PDSLabelDict
+from maser.data.pds import load_pds_from_label
+
+load_test_data("pds")
 
 root_data_path = get_data_directory() / 'pds'
 
 file = root_data_path / 'VG1-J-PRA-3-RDR-LOWBAND-6SEC-V1' / 'PRA_I.LBL'
 ov1 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=False)
 ov1a = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=True)
+ov1l = load_pds_from_label(str(file), load_data=False)
 
 file = root_data_path / 'VG1-S-PRA-3-RDR-LOWBAND-6SEC-V1' / 'PRA.LBL'
 ov3 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=True)
+ov3l = load_pds_from_label(str(file), load_data=False)
 
 file = root_data_path / 'VG2-N-PRA-3-RDR-LOWBAND-6SEC-V1' / 'VG2_NEP_PRA_6SEC.LBL'
 ov5 = PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(str(file), load_data=True)
+ov5l = load_pds_from_label(str(file), load_data=False)
+
+
+class LoadPDSFromLabel(unittest.TestCase):
+    """Test case for load_pds_from_label function"""
+
+    def test_loader(self):
+        self.assertIsInstance(ov1l, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
+        self.assertIsInstance(ov3l, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
+        self.assertIsInstance(ov5l, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel)
 
 
 class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabelVG1J(unittest.TestCase):
@@ -142,8 +154,8 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabelVG2N(unittest.TestCase):
         self.assertListEqual(list(freq_table5), list(ov5.frequency))
 
     def test_times(self):
-        self.assertEqual(ov5.start_time, datetime.datetime(1989, 8, 11, 0, 0, 3, 900000))
-        self.assertEqual(ov5.end_time, datetime.datetime(1989, 8, 31, 23, 59, 55, 900000))
+        self.assertEqual(ov5.start_time, datetime.datetime(1989, 8, 11, 0, 0))
+        self.assertEqual(ov5.end_time, datetime.datetime(1989, 8, 31, 0, 0))
         time_table5 = ov5.get_time_axis()
         self.assertEqual(len(time_table5), 288224)
         self.assertEqual(time_table5[0], datetime.datetime(1989, 8, 11, 0, 0, 3, 900000))

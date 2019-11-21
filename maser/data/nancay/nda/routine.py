@@ -6,21 +6,6 @@ Python module to work with SRN/NDA/Routine data
 @author: B.Cecconi(LESIA)
 """
 
-import struct
-import datetime
-import os
-import sys
-import numpy
-from maser.data.data import MaserDataSweep, MaserData
-from maser.data.nancay.nda.nda import NDAError
-from maser.data.nancay.nda.nda import NDADataFromFile
-from spacepy import pycdf as cdf
-import dateutil.parser
-
-#import sunpy.sun
-#get_sun_B0([time])	Return the B0 angle for the Sun at a specified time, which is the heliographic latitude of the Sun-disk center as seen from Earth.
-#get_sun_L0([time])	Return the L0 angle for the Sun at a specified time, which is the Carrington longitude of the Sun-disk center as seen from Earth.
-
 __author__ = "Baptiste Cecconi"
 __copyright__ = "Copyright 2017, LESIA-PADC-USN, Observatoire de Paris"
 __credits__ = ["Baptiste Cecconi", "Andree Coffre", "Laurent Lamy"]
@@ -37,6 +22,22 @@ _dat_version = "01"
 
 __all__ = ["NDARoutineDataRT1", "NDARoutineDataCDF", "NDARoutineSweepRT1", "NDARoutineSweepCDF", "NDARoutineError",
            "load_nda_routine_from_file"]
+
+import struct
+import datetime
+import os
+import sys
+# import numpy
+from ...data import MaserDataSweep, MaserData
+from ..nda import NDAError
+from ..nda import NDADataFromFile
+#from spacepy import pycdf as cdf
+from maser.utils import cdf
+import dateutil.parser
+
+# import sunpy.sun
+# get_sun_B0([time]) #	Return the B0 angle for the Sun at a specified time, which is the heliographic latitude of the Sun-disk center as seen from Earth.
+# get_sun_L0([time]) #	Return the L0 angle for the Sun at a specified time, which is the Carrington longitude of the Sun-disk center as seen from Earth.
 
 
 def _detect_format(file, debug=False):
@@ -226,7 +227,7 @@ class NDARoutineDataRT1(NDARoutineData):
         short_target = self.get_file_name()[0]
         self.meta.update(target_dict[short_target])
         if short_target != "A":
-            self.meta['recvr_id']+= "_" + target_dict[short_target]["target_name"][0:3].lower()
+            self.meta['recvr_id'] += "_" + target_dict[short_target]["target_name"][0:3].lower()
 
         self.meta['reference_level'] = self.header['ref_levl']
         self.meta['sweep_duration'] = self.header['swp_time']
@@ -266,18 +267,16 @@ class NDARoutineDataRT1(NDARoutineData):
         return meridian_dt
 
     def _header_from_file(self):
-        """
-
-        :return:
+        """ Return file header
+        :return header: (dict) Header data dictionary
         """
         if self.debug:
             print("This is {}._header_from_file()".format(__class__.__name__))
         return self._header_from_rt1()
 
     def _header_from_rt1(self):
-        """
-        Decodes the RT1 file header (format 1, see SRN NDA ROUTINE JUP documentation)
-        :return header: Header data dictionary
+        """ Return RT1 file header (format 1, see SRN NDA ROUTINE JUP documentation)
+        :return header: (dict) Header data dictionary
         """
         if self.debug:
             print("This is {}._header_from_rt1()".format(__class__.__name__))
@@ -565,7 +564,7 @@ class NDARoutineDataRT1(NDARoutineData):
         attrs['Discipline'] = ["Space Physics>Magnetospheric Science", "Planetary Physics>Waves"]
         attrs['Data_type'] = "EDR>Experiment Data Record"
         attrs['Descriptor'] = "{}>Routine receiver with {} pointing".format(self.meta['recvr_id'],
-                                             self.meta['target_name'])
+                                                                            self.meta['target_name'])
         attrs['Data_version'] = _dat_version
         attrs['Instrument_type'] = "Radio Telescope"
         attrs['Source_name'] = "SRN_NDA>Nancay Decametric Array"
@@ -675,8 +674,8 @@ class NDARoutineDataRT1(NDARoutineData):
 
         attrs = dict()
 
-        #attrs['NDA_rf_filter_selected'] = tmp_rf_filt
-        #attrs['NDA_rf_filter_change'] = tmp_rf_filt_change
+        # attrs['NDA_rf_filter_selected'] = tmp_rf_filt
+        # attrs['NDA_rf_filter_change'] = tmp_rf_filt_change
 
         attrs['NDA_power_resolution'] = self.meta['power_resolution']
         attrs['NDA_meridian_time'] = self.get_meridian_datetime().isoformat() + 'Z'
@@ -856,8 +855,8 @@ class NDARoutineSweepRT1(MaserDataSweep):
         self.debug = self.parent.debug
         self.data = dict()
 
-        self.data_start_pos = self.parent.file_info['data_offset_in_file'] \
-                            + self.index * self.parent.file_info['record_size']
+        self.data_start_pos = self.parent.file_info['data_offset_in_file'] + \
+                              self.index * self.parent.file_info['record_size']
         rec_date_fields = ['hr', 'min', 'sec', 'cs']
         rec_date_dtype = '<bbbb'
 

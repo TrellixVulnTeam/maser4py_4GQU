@@ -1,19 +1,19 @@
 import unittest
 import datetime
-import dateutil.parser
-import os
-from maser.data.tests import *
+import astropy.units as u
+
+from maser.data.tests import load_test_data, get_data_directory
 from maser.data import MaserDataFromFile
 import numpy
-from maser.data.pds.ppi.voyager.pra import PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
-    PDSPPIVoyagerPRADataFromLabel, PDSPPIVoyagerPRADataObject, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject
-from maser.data.pds.ppi.cassini.rpws.wbr import PDSPPICassiniRPWSWBRFullResDataFromLabel, \
+from maser.data.pds.voyager.pra import PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
+    PDSPPIVoyagerPRADataFromLabel, PDSPPIVoyagerPRADataObject, PDSPPIVoyagerPRAHighRateTimeSeriesObject
+from maser.data.pds.cassini.rpws.wbr import PDSPPICassiniRPWSWBRFullResDataFromLabel, \
     PDSPPICassiniRPWSWBRDataObject, PDSPPICassiniRPWSWBRRowPrefixTable
-from maser.data.pds.ppi.cassini.rpws.hfr import PDSPPICassiniRPWSHFRLowRateFullDataFromLabel, \
+from maser.data.pds.cassini.rpws.hfr import PDSPPICassiniRPWSHFRLowRateFullDataFromLabel, \
     PDSPPICassiniRPWSHFRDataObject
-from maser.data.pds import PDSDataFromLabel, PDSLabelDict, PDSDataTableObject, PDSDataTimeSeriesObject
+from maser.data.pds.classes import PDSDataFromLabel, PDSLabelDict, PDSDataTableObject, PDSDataTimeSeriesObject
 
-#maser.data.tests.load_test_data("pds")
+load_test_data("pds")
 
 root_data_path = get_data_directory() / 'pds'
 file = root_data_path / 'VG1-J-PRA-3-RDR-LOWBAND-6SEC-V1' / 'PRA_I.LBL'
@@ -107,11 +107,11 @@ class PDSDataFromLabelClassTest(unittest.TestCase):
         self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'], PDSPPIVoyagerPRADataObject)
         self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSDataTableObject)
         self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSDataTimeSeriesObject)
-        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['F1_F2_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateTimeSeriesObject)
         self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'], PDSPPIVoyagerPRADataObject)
         self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSDataTableObject)
         self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSDataTimeSeriesObject)
-        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateDataTimeSeriesObject)
+        self.assertIsInstance(ov4.object['F3_F4_TIME_SERIES'].data, PDSPPIVoyagerPRAHighRateTimeSeriesObject)
 
         self.assertIsInstance(ov5.object, dict)
         self.assertIn('TABLE', ov5.objects)
@@ -226,15 +226,15 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabelClassTest(unittest.TestCase):
         self.assertListEqual(list(freq_table3), list(ov3.frequency))
         freq_table5 = ov5.get_freq_axis()
         self.assertListEqual(list(freq_table5), list(ov5.frequency))
-        self.assertEqual(freq_table1[0], 1326)
+        self.assertEqual(freq_table1[0], 1326 * u.Unit('kHz'))
 
     def test_times(self):
         self.assertEqual(ov1.start_time, datetime.datetime(1979, 1, 6, 0, 0, 34))
-        self.assertEqual(ov1.end_time, datetime.datetime(2001, 1, 1, 0, 0))
+        self.assertEqual(ov1.end_time, datetime.datetime(1979, 1, 30, 23, 59, 47))
         time_table1 = ov1.get_time_axis()
         self.assertEqual(len(time_table1), 284552)
-        self.assertEqual(time_table1[0], datetime.datetime(2000, 12, 31, 0, 0))
-        self.assertEqual(time_table1[100], datetime.datetime(2000, 12, 31, 0, 0))
+        self.assertEqual(time_table1[0], datetime.datetime(1979, 1, 6, 0, 0, 37, 900000))
+        self.assertEqual(time_table1[100], datetime.datetime(1979, 1, 6, 0, 10, 37, 900000))
 
 # class PDSPPIVoyagerPRAJupiterDataTest(unittest.TestCase):
 #
