@@ -17,8 +17,18 @@ def load_wind_waves_bqt():
     return read_wind_waves(str(file_path))
 
 
-def load_wind_waves_radio_60s():
+def load_wind_waves_radio_60s_tnr():
     file_path = get_data_directory() / "cdpp" / "wind" / "WIN_TNR_60S_19941114.B3E"
+    return read_wind_waves(str(file_path))
+
+
+def load_wind_waves_radio_60s_rad1():
+    file_path = get_data_directory() / "cdpp" / "wind" / "wi_wa_rad1_l2_60s_19941114_v01.dat"
+    return read_wind_waves(str(file_path))
+
+
+def load_wind_waves_radio_60s_rad2():
+    file_path = get_data_directory() / "cdpp" / "wind" / "wi_wa_rad2_l2_60s_19941114_v01.dat"
     return read_wind_waves(str(file_path))
 
 
@@ -34,6 +44,9 @@ class WindWavesDataTest(unittest.TestCase):
         name = "TEST"
         test = WindWavesData("", header, data, meta, name)
         self.assertIsInstance(test, CDPPDataFromFile)
+
+
+class WindWavesDataTestNN(unittest.TestCase):
 
     def test_wind_waves_nn_name(self):
         print("### Testing WindWavesData name variable on NN dataset")
@@ -58,6 +71,9 @@ class WindWavesDataTest(unittest.TestCase):
         a = load_wind_waves_nn()
         dt = a["DATETIME"]
         self.assertEqual(dt[0], datetime.datetime(1994, 11, 14, 0, 0, 31, 885999))
+
+
+class WindWavesDataTestBQT(unittest.TestCase):
 
     def test_wind_waves_bqt_name(self):
         print("### Testing WindWavesData name variable on BQT dataset")
@@ -86,19 +102,22 @@ class WindWavesDataTest(unittest.TestCase):
         dt = a["DATETIME"]
         self.assertEqual(dt[0], datetime.datetime(1994, 11, 14, 0, 1, 30, 397999))
 
+
+class WindWavesDataTest60sTNR(unittest.TestCase):
+
     def test_wind_waves_radio_60s_name(self):
         print("### Testing WindWavesData name variable on RADIO_60S dataset")
-        a = load_wind_waves_radio_60s()
+        a = load_wind_waves_radio_60s_tnr()
         self.assertEqual(a.name, "WIND_WAVES_RADIO_60S")
 
     def test_wind_waves_radio_60s_len(self):
         print("### Testing WindWavesData len() method on RADIO_60S dataset")
-        a = load_wind_waves_radio_60s()
+        a = load_wind_waves_radio_60s_tnr()
         self.assertEqual(len(a), 1440)
 
     def test_wind_waves_radio_60s_keys(self):
         print("### Testing WindWavesData keys() method on RADIO_60S dataset")
-        a = load_wind_waves_radio_60s()
+        a = load_wind_waves_radio_60s_tnr()
         expected_list = ['CALEND_DATE_MONTH', 'CCSDS_PREAMBLE', 'CALEND_DATE_HOUR', 'IUNIT', 'AVG_DURATION',
                          'CCSDS_JULIAN_DAY_B1', 'CCSDS_JULIAN_DAY_B2', 'CALEND_DATE_YEAR', 'CALEND_DATE_MINUTE',
                          'CCSDS_MILLISECONDS_OF_DAY', 'NFREQ', 'CALEND_DATE_SECOND', 'JULIAN_SEC', 'RECEIVER_CODE',
@@ -107,7 +126,7 @@ class WindWavesDataTest(unittest.TestCase):
 
     def test_wind_waves_radio_60s_datetime(self):
         print("### Testing WindWavesData \"DATETIME\" key on RADIO_60S dataset")
-        a = load_wind_waves_radio_60s()
+        a = load_wind_waves_radio_60s_tnr()
         dt = a["DATETIME"]
         self.assertEqual(dt[0], datetime.datetime(1994, 11, 14, 0, 0, 30))
 
