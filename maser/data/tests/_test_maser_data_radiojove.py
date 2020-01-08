@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import datetime
-from maser.data.data import *
+from maser.data.classes import *
 from maser.data.padc.radiojove.radiojove_spx import RadioJoveDataSPXFromFile
 from maser.data.tests import load_test_data, get_data_directory
 

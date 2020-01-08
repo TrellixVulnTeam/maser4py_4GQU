@@ -16,7 +16,7 @@ import struct
 import numpy
 import datetime
 from maser.data.cdpp import CDPPDataFromFile, CDPPFileFromWebServiceSync
-from maser.data.data import MaserError, MaserDataSweep
+from maser.data.classes import MaserError, MaserDataSweep
 from .const import *
 
 class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):

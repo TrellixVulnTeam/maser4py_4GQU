@@ -10,7 +10,7 @@ import struct
 import dateutil.parser
 import os
 import numpy
-from maser.data.data import MaserDataFromFile, MaserError, MaserData
+from maser.data.classes import MaserDataFromFile, MaserError, MaserData
 from maser.data.pds.ppi.voyager import *
 
 __author__ = "Baptiste Cecconi"

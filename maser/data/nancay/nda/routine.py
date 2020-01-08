@@ -28,7 +28,7 @@ import datetime
 import os
 import sys
 # import numpy
-from ...data import MaserDataSweep, MaserData
+from ...classes import MaserDataSweep, MaserData
 from ..nda import NDAError
 from ..nda import NDADataFromFile
 #from spacepy import pycdf as cdf

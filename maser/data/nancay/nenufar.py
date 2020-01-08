@@ -20,7 +20,7 @@ __all__ = ["NenuFARBSTDataFromFile", "NenuFARSSTDataFromFile", "NenuFARDataECube
 
 import os
 from astropy.io import fits
-from maser.data.data import MaserDataFromFileFITS, MaserData, MaserDataSweep
+from maser.data.classes import MaserDataFromFileFITS, MaserData, MaserDataSweep
 
 
 class NenuFARBSTSweep(MaserDataSweep):

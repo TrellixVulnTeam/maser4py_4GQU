@@ -13,7 +13,7 @@ import pprint as pp
 import datetime
 import dateutil.parser
 import astropy.time
-from maser.data.data import MaserDataFromFile, MaserData
+from maser.data.classes import MaserDataFromFile, MaserData
 from maser.utils.cdf import cdf
 
 __author__ = "Baptiste Cecconi"

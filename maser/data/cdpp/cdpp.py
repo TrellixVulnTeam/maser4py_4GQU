@@ -15,9 +15,10 @@ import json
 import os
 import filecmp
 import getpass
-from maser.data.data import MaserDataFromFile, MaserError
+from maser.data.classes import MaserDataFromFile, MaserError
 import socket
 hostname = socket.getfqdn()
+
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."

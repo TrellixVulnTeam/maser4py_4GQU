@@ -9,7 +9,7 @@ Python module to work with PDS-PPI/Cassini/RPWS data
 from maser.data.padc.lesia.cassini.rpws import agc_dB, a123
 from maser.data.pds.ppi.cassini.rpws import iso_time_to_datetime
 from maser.data.pds.pds import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSError, PDSDataTimeSeriesObject
-from maser.data.data import MaserDataSweep
+from maser.data.classes import MaserDataSweep
 import numpy
 import dateutil.parser
 

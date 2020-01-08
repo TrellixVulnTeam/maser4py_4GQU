@@ -1,6 +1,6 @@
 import unittest
 import os
-from maser.data.data import *
+from maser.data.classes import *
 from maser.data.tests import load_test_data, get_data_directory
 
 load_test_data("cdpp")

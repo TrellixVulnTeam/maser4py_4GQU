@@ -16,9 +16,9 @@ __all__ = ["CassiniKronosData", "CassiniKronosLevel", "CassiniKronosFile",
 
 import os
 import struct
-from maser.data.data import MaserError
-from maser.data.data import MaserDataFromFile
-from maser.data.data import MaserDataFromInterval
+from maser.data.classes import MaserError
+from maser.data.classes import MaserDataFromFile
+from maser.data.classes import MaserDataFromInterval
 import datetime
 import numpy
 import hashlib

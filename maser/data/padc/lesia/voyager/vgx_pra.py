@@ -8,9 +8,9 @@ Python module to read a Voyager/PRA data file from LESIA datasets (recovered fro
 
 import os
 import struct
-from maser.data.data import MaserError
-from maser.data.data import MaserDataFromFile
-from maser.data.data import MaserDataFromInterval
+from maser.data.classes import MaserError
+from maser.data.classes import MaserDataFromFile
+from maser.data.classes import MaserDataFromInterval
 import datetime
 import numpy
 import hashlib

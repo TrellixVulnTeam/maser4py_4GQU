@@ -16,9 +16,9 @@ __all__ = ["NDADataFromFile", "NDAError", "NDADataECube"]
 
 import struct
 import datetime
-from maser.data.data import MaserError
-from maser.data.data import MaserDataFromFile
-from maser.data.data import MaserDataSweep
+from maser.data.classes import MaserError
+from maser.data.classes import MaserDataFromFile
+from maser.data.classes import MaserDataSweep
 
 
 class NDAError(MaserError):

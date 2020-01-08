@@ -12,7 +12,7 @@ XST (Cross Statistic): Cross-correlation between mini-arrays.
 
 import os
 from astropy.io import fits
-from maser.data.data import MaserDataFromFileFITS, MaserData, MaserError, MaserDataSweep
+from maser.data.classes import MaserDataFromFileFITS, MaserData, MaserError, MaserDataSweep
 
 __author__ = "Baptiste Cecconi"
 __institute__ = "LESIA, Observatoire de Paris, PSL Research University, CNRS."
