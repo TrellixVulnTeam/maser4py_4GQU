@@ -268,8 +268,6 @@ class PDSDataObject(MaserDataFromFile):
         if debug:
             print("### This is PDSDataObject.__init__()")
 
-        self.verbose = verbose
-        self.debug = debug
         self.product = product
         self.parent = parent
         self.obj_type = obj_name

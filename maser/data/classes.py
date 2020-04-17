@@ -19,7 +19,7 @@ __version__ = "0.10"
 __project__ = "MASER"
 
 __all__ = ["MaserError", "MaserData", "MaserDataFromFile", "MaserDataFromInterval", "MaserDataRecord",
-           "MaserDataSweep", "MaserDataFromFileCDF"]
+           "MaserDataSweep", "MaserDataFromFileCDF", "MaserDataFromFileText", "MaserDataFromFileFITS"]
 
 # defining local library paths
 
@@ -367,7 +367,7 @@ class MaserDataFromFileText(MaserDataFromFile):
 
     def __init__(self, file, verbose=True, debug=False):
 
-        MaserDataFromFile.__init__(file, verbose, debug)
+        MaserDataFromFile.__init__(self, file, verbose, debug)
         self.format = 'TXT'
 
     def get_mime_type(self):
@@ -386,7 +386,7 @@ class MaserDataFromFileCSV(MaserDataFromFile):
 
     def __init__(self, file, verbose=True, debug=False):
 
-        MaserDataFromFile.__init__(file, verbose, debug)
+        MaserDataFromFile.__init__(self, file, verbose, debug)
         self.format = 'CSV'
 
     def get_mime_type(self):

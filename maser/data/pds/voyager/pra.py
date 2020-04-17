@@ -18,7 +18,8 @@ __date__ = "27-FEB-2018"
 __project__ = "MASER/PADC PDS/PPI/Voyager/PRA"
 
 __all__ = ["PDSPPIVoyagerPRADataFromLabel", "PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel",
-           "PDSPPIVoyagerPRAHighRateTimeSeriesObject", "PDSPPIVoyagerPRADataObject"]
+           "PDSPPIVoyagerPRAHighRateTimeSeriesObject", "PDSPPIVoyagerPRADataObject",
+           "PDSPPIVoyagerPRARDRLowBand6SecSweep"]
 
 import numpy
 import struct
@@ -31,6 +32,9 @@ import logging
 _module_logger = logging.getLogger('maser.data.pds.ppi.voyager.pra')
 
 default_root_data_path = "/Users/baptiste/Volumes/kronos-dio/voyager/data/pra/PDS_data/"
+
+VOYAGER_PRA_SWEEP_INDICES_EVEN = numpy.linspace(0, 68, 35, dtype=numpy.int8)
+VOYAGER_PRA_SWEEP_INDICES_ODD = numpy.linspace(1, 69, 35, dtype=numpy.int8)
 
 
 class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
@@ -75,8 +79,8 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
     def _get_polar_indices(self):
         self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecSweep._get_polar_indices()")
 
-        even_idx = numpy.linspace(0, 68, 35, dtype=numpy.int8)
-        odd_idx = numpy.linspace(1, 69, 35, dtype=numpy.int8)
+        even_idx = VOYAGER_PRA_SWEEP_INDICES_EVEN
+        odd_idx = VOYAGER_PRA_SWEEP_INDICES_ODD
         if self._get_sweep_type() == 'R':
             return {'R': even_idx, 'L': odd_idx}
         else:
