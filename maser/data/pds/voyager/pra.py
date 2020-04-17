@@ -98,6 +98,9 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
         else:
             return 0
 
+    def __repr__(self):
+        return f'< {str(self.parent).strip("<>")}: sweep #{self.index}>'
+
 
 class PDSPPIVoyagerPRADataObject(PDSDataObject):
 
