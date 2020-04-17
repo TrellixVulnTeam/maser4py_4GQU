@@ -89,12 +89,15 @@ class GSFCVoyagerPRAData(MaserDataFromFileText):
         return self._get_freq_axis().to(unit)
 
     @property
-    def _nrows(self):
+    def _n_rows(self):
         return len(self._data)
+
+    def __len__(self):
+        return self._n_rows * 8
 
     def _seconds_of_day(self):
         sec_start_row = _expand_rows(self._data[:,3])
-        sec_row_sweep = numpy.tile(numpy.arange(8)*6, (self._nrows,))
+        sec_row_sweep = numpy.tile(numpy.arange(8)*6, (self._n_rows,))
         return sec_start_row + sec_row_sweep
 
     def get_single_datetime(self, index):
