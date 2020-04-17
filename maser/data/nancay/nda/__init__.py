@@ -12,13 +12,11 @@ __date__ = "12-OCT-2017"
 __version__ = "0.11"
 __project__ = "MASER/SRN/NDA"
 
-__all__ = ["NDADataFromFile", "NDAError", "NDADataECube"]
+__all__ = ["NDADataFromFile", "NDAError", "NDADataECube", "NDADataFromFileFITS"]
 
 import struct
 import datetime
-from maser.data.classes import MaserError
-from maser.data.classes import MaserDataFromFile
-from maser.data.classes import MaserDataSweep
+from maser.data.classes import MaserError, MaserDataFromFile, MaserDataFromFileFITS, MaserDataSweep
 
 
 class NDAError(MaserError):
@@ -32,9 +30,16 @@ class NDADataFromFile(MaserDataFromFile):
         self.header = header
         self.data = data
         self.name = name
+        self.file_info = {'name': self.file, 'size': self.get_file_size()}
 
     def __len__(self):
         return len(self.data)
+
+
+class NDADataFromFileFITS(NDADataFromFile, MaserDataFromFileFITS):
+    def __init__(self, file, header, data, name, verbose=True, debug=False):
+        MaserDataFromFileFITS.__init__(self, file, verbose=verbose, debug=debug)
+        NDADataFromFile.__init__(self, file, header, data, name, verbose=verbose, debug=debug)
 
 
 class NDADataECube(MaserDataSweep):

@@ -14,7 +14,7 @@ __all__ = ["NDANewRoutineData", "NDANewRoutineError", "NDANewRoutineECube", "rea
 
 import struct
 import os
-from ..nda import NDAError, NDADataFromFile, NDADataECube
+from ..nda import NDAError, NDADataFromFile, NDADataECube, NDADataFromFileFITS
 
 
 class NDANewRoutineError(NDAError):
@@ -32,7 +32,7 @@ class NDANewRoutineData(NDADataFromFile):
         """
         header = {}
         data = []
-        name = "SRN/NDA NewRoutine Dataset"
+        name = "SRN/NDA NewRoutine Binary Dataset"
         # meta = {}
         NDADataFromFile.__init__(self, file, header, data, name)
         self.file_handle = open(self.file, 'rb')
@@ -232,14 +232,27 @@ class NDANewRoutineECube(NDADataECube):
     pass
 
 
+class NDANewRoutineDataFITS(NDADataFromFileFITS):
+
+    def __init__(self, file):
+        header = {}
+        data = []
+        name = "SRN/NDA NewRoutine FITS Dataset"
+        NDADataFromFileFITS.__init__(self, file, header, data, name)
+
+
 def read_srn_nda_new_routine(file_path):
     """
 
     :param file_path:
     :return:
     """
-
-    return NDANewRoutineData(file_path)
+    if file_path.lower().endswith('.fits'):
+        return NDANewRoutineDataFITS(file_path)
+    elif file_path.lower().endswith('.dat'):
+        return NDANewRoutineData(file_path)
+    else:
+        raise
 
 
 def make_nda_newroutine_cdf(file_path, start_time, end_time, verbose=True):
