@@ -291,6 +291,11 @@ _test_data_files = {
             'LRFC_DATA_QUALITY.FMT'
         ],
     },
+    'gsfc': {
+        'voyager_pra_6sec': [
+            '19890811.dat'
+        ]
+    }
 }
 
 
