@@ -369,6 +369,9 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel)
             self.time = self._get_time_axis()
         return self.time
 
+    def __len__(self):
+        return self.nsweep
+
 
 class PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
 
