@@ -294,6 +294,9 @@ _test_data_files = {
     'gsfc': {
         'voyager_pra_6sec': [
             '19890811.dat'
+        ],
+        'voyager_pra_48sec': [
+            '19790306.txt'
         ]
     }
 }

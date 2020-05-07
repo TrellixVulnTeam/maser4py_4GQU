@@ -5,7 +5,7 @@ import numpy
 from astropy.units import Unit, Quantity
 from maser.data.tests import load_test_data, get_data_directory
 from maser.data import MaserDataFromFile, MaserDataFromFileText
-from maser.data.padc.lesia.voyager.pra_gsfc import GSFCVoyagerPRAData, \
+from maser.data.padc.lesia.voyager.pra_gsfc import GSFCVoyagerPRA6secData, \
     GSFCVoyagerPRARDRLowBand6SecSweep, load_voyager_pra_gsfc_lowband_6sec, \
     VOYAGER_PRA_FREQUENCY_LIST
 
@@ -14,20 +14,20 @@ load_test_data("gsfc")
 root_data_path = get_data_directory() / 'gsfc'
 
 file = root_data_path / 'voyager_pra_6sec' / '19890811.dat'
-ovC = GSFCVoyagerPRAData(str(file))
+ovC = GSFCVoyagerPRA6secData(str(file))
 ovF = load_voyager_pra_gsfc_lowband_6sec(str(file))
 
 
-class LoadWithFunction(unittest.TestCase):
+class Load6secFunction(unittest.TestCase):
 
     def test_loader_function(self):
-        self.assertIsInstance(ovF, GSFCVoyagerPRAData)
+        self.assertIsInstance(ovF, GSFCVoyagerPRA6secData)
 
 
-class LoadWithClass(unittest.TestCase):
+class Load6secClass(unittest.TestCase):
 
     def test_loader_class(self):
-        self.assertIsInstance(ovC, (GSFCVoyagerPRAData, MaserDataFromFileText, MaserDataFromFile))
+        self.assertIsInstance(ovC, (GSFCVoyagerPRA6secData, MaserDataFromFileText, MaserDataFromFile))
 
     def test_meta(self):
         self.assertEqual(ovC.format, 'TXT')
@@ -66,7 +66,7 @@ class LoadWithClass(unittest.TestCase):
         self.assertListEqual(list(ovC._data[0, 4::71]), list([1856, 1344, 1856, 1344, 1856, 1344, 1856, 1344]))
 
 
-class Sweep(unittest.TestCase):
+class Sweep6sec(unittest.TestCase):
 
     def test_class(self):
         self.assertIsInstance(ovC.get_single_sweep(0), GSFCVoyagerPRARDRLowBand6SecSweep)

@@ -600,7 +600,7 @@ class PDSDataTableColumnHeaderObject:
     def _get_struct_format(self):
 
         data_type = ''
-        endianess = ''
+        endianess = '>'
 
         if self.verbose:
             print("Data type = {}".format(self.label['DATA_TYPE']))

@@ -27,6 +27,7 @@ import datetime
 from maser.data import MaserDataSweep
 from maser.data.pds.classes import PDSDataFromLabel, PDSDataObject, PDSDataTableObject, PDSDataTimeSeriesObject
 import astropy.units as u
+from . import const
 
 import logging
 _module_logger = logging.getLogger('maser.data.pds.ppi.voyager.pra')
@@ -99,7 +100,36 @@ class PDSPPIVoyagerPRARDRLowBand6SecSweep(MaserDataSweep):
             return 0
 
     def __repr__(self):
-        return f'< {str(self.parent).strip("<>")}: sweep #{self.index}>'
+        return f'<{str(self.parent).strip("<>")}: sweep #{self.index}>'
+
+
+class PDSPPIVoyagerPRARDRLowBand48SecSweep(MaserDataSweep):
+
+    class_path = 'maser.data.pds.ppi.voyager.pra'
+    class_name = 'PDSPPIVoyagerPRARDRLowBand48SecSweep'
+
+    def __init__(self, parent, index, verbose=False, debug=False):
+
+        self.logger = logging.getLogger(f'{self.class_path}.{self.class_name}')
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        self.logger.debug(f'### This is {self.class_name}.__init__()')
+
+        MaserDataSweep.__init__(self, parent, index, verbose, debug)
+        self.data = {
+            'R': self.parent.object['TIME_SERIES'].data['RH_DATA'][index],
+            'L': self.parent.object['TIME_SERIES'].data['LH_DATA'][index],
+        }
+        self.freq = self.parent.frequency
+        self.logger.debug(f"{self.class_name} instance created")
+
+    def get_datetime(self):
+        self.logger.debug(f"### This is {self.class_name}.get_datetime()")
+
+        return self.parent.get_single_datetime(self.index)
+
+    def __repr__(self):
+        return f'<{str(self.parent).strip("<>")}: sweep #{self.index}>'
 
 
 class PDSPPIVoyagerPRADataObject(PDSDataObject):
@@ -198,8 +228,10 @@ class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
     def _get_freq_axis(self):
         pass
 
-    def get_freq_axis(self, unit):
-        pass
+    def get_freq_axis(self, unit="kHz"):
+        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_freq_axis()")
+
+        return self.frequency.to(u.Unit(unit))
 
     def get_epncore_meta(self):
         meta = PDSDataFromLabel.get_epncore_meta(self)
@@ -215,47 +247,105 @@ class PDSPPIVoyagerPRADataFromLabel(PDSDataFromLabel):
         return meta
 
 
-class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
+class PDSPPIVoyagerPRARDRLowBand48SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
 
-    def __init__(self, file, label_dict=None, load_data=True, verbose=False, debug=False):
+    class_path = 'maser.data.pds.voyager.pra'
+    class_name = 'PDSPPIVoyagerPRARDRLowBand48SecDataFromLabel'
 
-        self.logger = logging.getLogger('maser.data.pds.ppi.voyager.pra.PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel')
+    def __init__(self, file, label_dict=None, fmt_label_dict=None,  load_data=True, verbose=False, debug=False):
+
+        self.logger = logging.getLogger(f'{self.class_path}.{self.class_name}')
         if debug:
             self.logger.setLevel(logging.DEBUG)
-        self.logger.debug('### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.__init__()')
+        self.logger.debug(f'### This is {self.class_name}.__init__()')
 
-        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, label_dict, load_data, verbose, debug)
+        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, label_dict, fmt_label_dict, load_data, verbose, debug)
+        self.nsweep = int(self.label['TIME_SERIES']['ROWS'])
+
+    def get_single_datetime(self, index):
+        self.logger.debug(f'### This is {self.class_name}.get_single_datetime()')
+
+        return self._get_time_axis()[index]
+
+    def _get_freq_axis(self):
+        self.logger.debug(f"### This is {self.class_name}._get_freq_axis()")
+
+        return const.VOYAGER_PRA_FREQUENCY_LOWBAND
+
+    def get_single_sweep(self, index=0, **kwargs):
+        self.logger.debug(f"### This is {self.class_name}.get_single_sweep()")
+
+        return PDSPPIVoyagerPRARDRLowBand48SecSweep(self, index)
+
+    def _get_time_axis(self):
+        self.logger.debug(f"### This is {self.class_name}._get_time_axis()")
+
+        if not self.object['TIME_SERIES'].data_loaded:
+            self.load_data('TIME_SERIES')
+
+        times = []
+        for item_year, item_day, item_hour, item_minute, item_second in zip(
+                self.object['TIME_SERIES'].data['YEAR'],
+                self.object['TIME_SERIES'].data['DAY'],
+                self.object['TIME_SERIES'].data['HOUR'],
+                self.object['TIME_SERIES'].data['MINUTE'],
+                self.object['TIME_SERIES'].data['SECOND']
+        ):
+            times.append(
+                datetime.datetime.strptime(
+                    f'19{item_year:02d}{item_day:03d}{item_hour:02d}{item_minute:02d}{item_second:02d}',
+                    '%Y%j%H%M%S'
+                )
+            )
+        return numpy.array(times)
+
+    def get_time_axis(self):
+        self.logger.debug(f"### This is {self.class_name}.get_time_axis()")
+
+        if self.time is None:
+            self.time = self._get_time_axis()
+        return self.time
+
+
+class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
+
+    class_path = 'maser.data.pds.voyager.pra'
+    class_name = 'PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel'
+
+    def __init__(self, file, label_dict=None, fmt_label_dict=None, load_data=True, verbose=False, debug=False):
+
+        self.logger = logging.getLogger(f'{self.class_path}.{self.class_name}')
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        self.logger.debug(f'### This is {self.class_name}.__init__()')
+
+        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, label_dict, fmt_label_dict, load_data, verbose, debug)
         self.nsweep = int(self.label['TABLE']['ROWS']) * 8
 
     def _split_index(self, index):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._split_index()")
+        self.logger.debug(f"### This is {self.class_name}._split_index()")
 
         if index < 0:
             index += self.object['TABLE'].data.n_rows * 8
         return index // 8, index % 8
 
     def get_single_datetime(self, index):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_single_datetime()")
+        self.logger.debug(f"### This is {self.class_name}.get_single_datetime()")
 
         return self._get_time_axis()[index]
 
     def _get_freq_axis(self):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._get_freq_axis()")
+        self.logger.debug(f"### This is {self.class_name}._get_freq_axis()")
 
-        return numpy.arange(1326, -18, -19.2) * u.Unit('kHz')
-
-    def get_freq_axis(self, unit="kHz"):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_freq_axis()")
-
-        return self.frequency.to(u.Unit(unit))
+        return const.VOYAGER_PRA_FREQUENCY_LOWBAND
 
     def get_single_sweep(self, index=0, **kwargs):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_single_sweep()")
+        self.logger.debug(f"### This is {self.class_name}.get_single_sweep()")
 
         return PDSPPIVoyagerPRARDRLowBand6SecSweep(self, index)
 
     def _get_time_axis(self):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel._get_time_axis()")
+        self.logger.debug(f"### This is {self.class_name}._get_time_axis()")
 
         if not self.object['TABLE'].data_loaded:
             self.load_data('TABLE')
@@ -270,29 +360,29 @@ class PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel(PDSPPIVoyagerPRADataFromLabel)
             sec = item_second + 3.9
             for ii in range(8):
                 times.append(datetime.datetime(yy,mm, dd, 0, 0, 0) + datetime.timedelta(seconds=sec + 6 * ii))
-
         return numpy.array(times)
 
     def get_time_axis(self):
-        self.logger.debug("### This is PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel.get_time_axis()")
+        self.logger.debug(f"### This is {self.class_name}.get_time_axis()")
 
         if self.time is None:
             self.time = self._get_time_axis()
-
         return self.time
 
 
 class PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel(PDSPPIVoyagerPRADataFromLabel):
 
-    def __init__(self, file, label_dict=None, load_data=True, verbose=False, debug=False):
+    class_path = 'maser.data.pds.voyager.pra'
+    class_name = 'PDSPPIVoyagerPRARDRLowBand48SecDataFromLabel'
 
-        self.logger = logging.getLogger('maser.data.pds.ppi.voyager.pra.'
-                                        'PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel')
+    def __init__(self, file, label_dict=None, fmt_label_dict=None, load_data=True, verbose=False, debug=False):
+
+        self.logger = logging.getLogger(f'{self.class_path}.{self.class_name}')
         if debug:
             self.logger.setLevel(logging.DEBUG)
-        self.logger.debug('### This is PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel.__init__()')
+        self.logger.debug(f'### This is {self.class_name}.__init__()')
 
-        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, label_dict, load_data, verbose, debug)
+        PDSPPIVoyagerPRADataFromLabel.__init__(self, file, label_dict, fmt_label_dict, load_data, verbose, debug)
         self.nwaveform = int(self.label['F1_F2_TIME_SERIES']['ROWS'])
 
 """
