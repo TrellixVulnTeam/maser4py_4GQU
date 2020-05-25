@@ -19,7 +19,7 @@ class NDANewRoutineDataClass(unittest.TestCase):
     """Test case for NDARoutineData class"""
 
     def test_dataset_name(self):
-        self.assertEqual(rou.name, "SRN/NDA NewRoutine Dataset")
+        self.assertEqual(rou.name, "SRN/NDA NewRoutine Binary Dataset")
 
     def test_filedate(self):
         self.assertEqual(rou.file_info['filedate'], "20170101")
