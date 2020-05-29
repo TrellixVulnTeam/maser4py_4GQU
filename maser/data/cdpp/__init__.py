@@ -15,6 +15,13 @@ __project__ = "MASER/CDPP"
 __all__ = ["CDPPDataFromFile", "CDPPWebService", "CDPPFileFromWebService", "CDPPFileFromWebServiceSync",
            "CDPPFileFromWebServiceAsync"]
 
+from . import demeter
+from . import interball
+from . import isee3
+from . import ulysses
+from . import viking
+from . import wind
+
 import datetime
 import requests
 import time
