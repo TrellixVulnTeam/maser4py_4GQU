@@ -1,5 +1,5 @@
 import unittest
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 
 
 class CDPPDataTest(unittest.TestCase):

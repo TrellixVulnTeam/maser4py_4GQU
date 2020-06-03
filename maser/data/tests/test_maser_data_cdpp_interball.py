@@ -2,7 +2,7 @@ import unittest
 import datetime
 from maser.data import MaserDataSweep
 from maser.data.tests import load_test_data, get_data_directory
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from maser.data.cdpp.interball.polrad import CDPPInterballAuroralPOLRADRSPData, read_int_aur_polrad
 
 load_test_data("cdpp")

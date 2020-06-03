@@ -1,6 +1,5 @@
 import unittest
 import datetime
-import datetime
 
 from maser.data.cdpp.ccsds import decode_ccsds_date, CCSDSDateCCS, CCSDSDateCDS, CCSDSDateCUC, \
     from_binary_coded_decimal, to_binary_coded_decimal

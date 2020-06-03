@@ -14,10 +14,11 @@ __all__ = ["load_int_aur_polrad_from_webservice", "read_int_aur_polrad"]
 
 import struct
 import numpy
-import datetime
-from maser.data.cdpp import CDPPDataFromFile, CDPPFileFromWebServiceSync
+from maser.data.cdpp.classes import CDPPDataFromFile
+from maser.data.cdpp.webservice import CDPPFileFromWebServiceSync
 from maser.data.classes import MaserError, MaserDataSweep
 from .const import *
+
 
 class CDPPInterballAuroralPOLRADRSPSweep(MaserDataSweep):
 

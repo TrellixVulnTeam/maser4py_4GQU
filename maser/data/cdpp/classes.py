@@ -9,7 +9,6 @@ For more info on CCSDS time formats, refer to "TIME CODE FORMATS" CCSDS 301.0-B-
 
 import datetime
 import requests
-import dateutil.parser
 import time
 import json
 import os

@@ -14,7 +14,7 @@ __all__ = ["ISEE3SBHData", "read_isee3_sbh_3d_radio_source"]
 
 import struct
 import os
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from .const import *
 
 

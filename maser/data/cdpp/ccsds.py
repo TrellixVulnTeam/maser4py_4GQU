@@ -36,6 +36,7 @@ def decode_ccsds_date(p_field, t_field, epoch=None) -> 'CCSDSDate':
     The output  on the `p_field` input parameter
     :param p_field: (int)
     :param t_field: (bytearray)
+    :param epoch: Time start epoch
     :return: CCSDSDate derived object
     """
 

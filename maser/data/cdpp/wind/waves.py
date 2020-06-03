@@ -7,14 +7,14 @@ Python module to read a Wind/Waves data file from CDPP deep archive (http://cdpp
 """
 
 __author__ = "Baptiste Cecconi"
-__date__ = "10-JUL-2017"
-__version__ = "0.11"
+__date__ = "29-May-2020"
+__version__ = "0.13"
 
 __all__ = ["WindWavesData", "read_wind_waves"]
 
 import struct
 import os
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from .const import *
 
 

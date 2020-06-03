@@ -16,7 +16,7 @@ __all__ = ["VikingV4nData", "read_viking"]
 
 import os
 import struct
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from .const import *
 
 

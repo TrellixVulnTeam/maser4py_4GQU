@@ -2,7 +2,7 @@ import unittest
 import datetime
 from maser.data import MaserDataSweep
 from maser.data.tests import load_test_data, get_data_directory
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from maser.data.cdpp.demeter.ice import CDPPDemeterN11134Data, read_dmt_n1_1134
 
 load_test_data("cdpp")

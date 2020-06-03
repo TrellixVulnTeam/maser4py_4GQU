@@ -1,7 +1,7 @@
 import unittest
 import datetime
 from maser.data.tests import load_test_data, get_data_directory
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from maser.data.cdpp.wind.waves import WindWavesData, read_wind_waves
 
 load_test_data("cdpp")

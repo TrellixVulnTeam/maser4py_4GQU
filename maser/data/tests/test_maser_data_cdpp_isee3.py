@@ -1,7 +1,7 @@
 import unittest
 import datetime
 from maser.data.tests import load_test_data, get_data_directory
-from maser.data.cdpp import CDPPDataFromFile
+from maser.data.cdpp.classes import CDPPDataFromFile
 from maser.data.cdpp.isee3.sbh import ISEE3SBHData, read_isee3_sbh_3d_radio_source
 
 load_test_data("cdpp")

@@ -14,8 +14,9 @@ __all__ = ["CDPPDemeterN11134Data", "load_dmt_n1_1134_from_webservice", "read_dm
 
 import struct
 import numpy
-from maser.data import MaserError, MaserDataSweep
-from maser.data.cdpp import CDPPDataFromFile, CDPPFileFromWebServiceSync
+from maser.data import MaserDataSweep
+from maser.data.cdpp.classes import CDPPDataFromFile
+from maser.data.cdpp.webservice import CDPPFileFromWebServiceSync
 from .const import *
 
 
