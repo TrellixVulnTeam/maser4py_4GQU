@@ -19,7 +19,7 @@ __project__ = "MASER/PADC PDS/PPI/Voyager/PRA"
 
 __all__ = ["PDSPPIVoyagerPRADataFromLabel", "PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel",
            "PDSPPIVoyagerPRAHighRateTimeSeriesObject", "PDSPPIVoyagerPRADataObject",
-           "PDSPPIVoyagerPRARDRLowBand6SecSweep"]
+           "PDSPPIVoyagerPRARDRLowBand6SecSweep", "PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel"]
 
 import numpy
 import struct
