@@ -1,7 +1,9 @@
 import numpy
 from astropy.units import Unit
 
-from .pra import PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel, PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
+from .pra import \
+    PDSPPIVoyagerPRAHighRateDataTimeSeriesDataFromLabel, \
+    PDSPPIVoyagerPRARDRLowBand6SecDataFromLabel, \
     PDSPPIVoyagerPRARDRLowBand48SecDataFromLabel
 
 __all__ = ['PDS_OBJECT_CLASSES', 'VOYAGER_PRA_FREQUENCY_LOWBAND']
